@@ -1,0 +1,1 @@
+# azure-serverless-registration-app
