@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "aws-serverless-registration-app"
+version = "0.1.0"
+description = ""
+authors = ["JP White <jpwhite3@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Flask = "1.1.4"
+Werkzeug = "1.0.1"
+MarkupSafe = "2.0.1"
+Jinja2 = "2.11.3"
+pynamodb = "^5.2.3"
+boto3 = "^1.25.4"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

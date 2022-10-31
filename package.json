@@ -1,14 +1,10 @@
 {
-  "name": "azure-serverless-registration-app",
+  "name": "aws-serverless-registration-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "Example of a Python Flask API service backed by DynamoDB with traditional Serverless Framework",
   "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "serverless-azure-functions": "1.0.2-22"
+    "serverless-python-requirements": "^6.0.0",
+    "serverless-wsgi": "^3.0.1"
   }
 }
