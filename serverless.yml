@@ -3,9 +3,20 @@ service: aws-serverless-registration-app
 frameworkVersion: '3'
 
 custom:
-  tableName: 'registration-${self:provider.stage}'
+  tableName: 'levelup-registration'
   wsgi:
     app: src/app.app
+    packRequirements: true
+  pythonRequirements:
+    usePipenv: true
+    invalidateCaches: true
+    strip: false
+    slim: true
+    slimPatternsAppendDefaults: false
+    slimPatterns:
+        - "**/*.pyc"
+        - "**/*.pyo"
+        - "**/__pycache__*"
 
 provider:
   name: aws
@@ -27,7 +38,7 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
           Resource:
-            - Fn::GetAtt: [ RegistrationTable, Arn ]
+            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/${self:custom.tableName}
   environment:
     REGISTRATION_TABLE: ${self:custom.tableName}
     # https://www.serverless.com/blog/aws-secrets-management/
@@ -51,20 +62,9 @@ package:
     - '!static/**'
     - '!*.md'
     - '!Makefile'
+    - '!.venv'
+    - '!dist'
+    - '!docker'
+    - '!docker*.*'
     - 'templates/**'
 
-resources:
-  Resources:
-    RegistrationTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: registrationId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: registrationId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.tableName}

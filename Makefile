@@ -6,13 +6,20 @@ bootstrap:
 reqs:
 	pipenv requirements > requirements.txt
 
-deploy:
-	serverless deploy
-
-package:
+clean:
 	- rm -rf ./dist
+
+prep: clean reqs
+
+deploy: prep
+	pipenv run serverless deploy
+
+un-deploy:
+	pipenv run serverless remove
+
+package: prep
 	mkdir -p ./dist
-	serverless package --package ./dist
+	pipenv run serverless package --package ./dist
 
 serve:
 	IS_OFFLINE=1 sls wsgi serve
