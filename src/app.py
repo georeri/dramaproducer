@@ -1,12 +1,15 @@
 import os
 import uuid
+from typing import Any
 from pathlib import Path
 from flask import Flask, jsonify, make_response, redirect
 from jinja2 import Environment, FileSystemLoader
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, SelectField
-from wtforms.validators import DataRequired, Regexp, UUID, Length
+from wtforms import StringField, EmailField, SelectField, HiddenField
+from wtforms import validators
+import pynamodb.constants
+from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
 from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute
@@ -31,8 +34,50 @@ app.secret_key = os.environ.get("SECRET_KEY", "ARBITRARY")
 csrf = CSRFProtect(app)
 
 
+@app.template_filter()
+def format_datetime(value, format="medium"):
+    if format == "full":
+        format = "EEEE, d. MMMM y 'at' HH:mm"
+    elif format == "medium":
+        format = "EE dd.MM.y HH:mm"
+    return value.strftime(format)
+
+
 #########################
-# DynamoDB Models
+# Custom table attributes
+#########################
+
+
+class UUIDAttribute(Attribute[uuid.UUID]):
+    """
+    PynamoDB attribute to for UUIDs. These are backed by DynamoDB unicode (`S`) types.
+    """
+
+    attr_type = pynamodb.constants.STRING
+
+    def __init__(self, remove_dashes: bool = False, **kwargs: Any) -> None:
+        """
+        Initializes a UUIDAttribute object.
+        :param remove_dashes: if set, the string serialization will be without dashes.
+        Defaults to False.
+        """
+        super().__init__(**kwargs)
+        self._remove_dashes = remove_dashes
+
+    def serialize(self, value: uuid.UUID) -> str:
+        result = str(value)
+
+        if self._remove_dashes:
+            result = result.replace("-", "")
+
+        return result
+
+    def deserialize(self, value: str) -> uuid.UUID:
+        return uuid.UUID(value)
+
+
+#########################
+# DynamoDB table models
 #########################
 
 
@@ -43,7 +88,7 @@ class EventModel(Model):
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
-    uid = UnicodeAttribute(hash_key=True, default_for_new=uuid.uuid4)
+    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
     name = UnicodeAttribute()
     description = UnicodeAttribute()
     location = UnicodeAttribute()
@@ -62,9 +107,9 @@ class RegistrationModel(Model):
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
 
-    uid = UnicodeAttribute(hash_key=True, default_for_new=uuid.uuid4)
+    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
+    event_uid = UUIDAttribute()
     status = UnicodeAttribute(default="new")
-    event_uid = UnicodeAttribute()
     first_name = UnicodeAttribute()
     last_name = UnicodeAttribute()
     corp_email = UnicodeAttribute()
@@ -74,30 +119,52 @@ class RegistrationModel(Model):
 
 
 #########################
-# Form Definitions
+# Form definitions
 #########################
 
 
 class RegistrationForm(FlaskForm):
-    event = SelectField("Please choose an event", validators=[UUID()])
-    fist_name = StringField("First name", description="", validators=[DataRequired()])
-    last_name = StringField("Last name", validators=[DataRequired()])
-    corp_email = EmailField(
-        "Corporate email", validators=[DataRequired(), Regexp(r"^.*@wellsfargo.com$")]
+    event = SelectField("Please choose an event", validators=[validators.UUID()])
+    first_name = StringField(
+        "First name", description="", validators=[validators.DataRequired()]
     )
-    corp_id = StringField(
-        "Corporate UID",
-        validators=[DataRequired(), Length(max=7), Regexp(r"^[a-zA-Z][0-9]{6}")],
+    last_name = StringField("Last name", validators=[validators.DataRequired()])
+    corp_email = EmailField(
+        "Corporate email",
+        validators=[
+            validators.DataRequired(),
+            validators.Regexp(r"^.*@wellsfargo.com$"),
+        ],
+    )
+    corp_sid = StringField(
+        "Corporate SID",
+        validators=[
+            validators.DataRequired(),
+            validators.Length(max=7),
+            validators.Regexp(r"^[a-zA-Z][0-9]{6}"),
+        ],
     )
     personal_email = EmailField("Personal email")
-    github_user_id = StringField("GitHub username")
+    github_username = StringField("GitHub username")
 
     def save(self):
-        pass
+        RegistrationModel(
+            event_uid=self.event.data,
+            first_name=self.first_name.data,
+            last_name=self.last_name.data,
+            corp_email=self.corp_email.data,
+            corp_sid=self.corp_sid.data,
+            personal_email=self.personal_email.data,
+            github_username=self.github_username.data,
+        ).save()
+
+
+class CancellationForm(FlaskForm):
+    registration = HiddenField(validators=[validators.UUID()])
 
 
 #########################
-# Helpers
+# Helper functions
 #########################
 
 
@@ -109,34 +176,56 @@ def create_all_tables():
         RegistrationModel.create_table(wait=True)
 
 
+def get_open_events():
+    events = [e for e in EventModel.scan() if e.status == "open"]
+    return sorted(events, key=lambda e: e.start_date)
+
+
+def find_registrations(email):
+    registrations = [r for r in RegistrationModel.scan() if r.corp_email == email]
+    return sorted(registrations, key=lambda e: e.start_date)
+
+
 def render_template(template_path, *args, **kwargs):
     return ENV.get_template(template_path).render(*args, **kwargs)
 
 
 #########################
-# API Routes
+# Flask (API) routes
 #########################
 
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-    choices = [
-        (
-            "e50de23c-c91b-4bb6-885a-70090768f3d9",
-            "Level Up Chandler / ASD-200-CMP / November 2022",
-        ),
-        (
-            "5e654ff9-8550-4b13-9915-2f2fb2ef4ecd",
-            "Level Up Charlotte / ASD-200-CMP / April 2023",
-        ),
-    ]
     form = RegistrationForm()
-    form.event.choices = choices
+    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
+        form.save()
         return redirect("/registration_success")
     return render_template("index.html", form=form)
 
 
 @app.route("/registration_success", methods=["GET"])
 def registration_success():
-    return render_template("success.html")
+    return render_template("registration_success.html")
+
+
+@app.route("/view/<uuid:registration_id>", methods=["GET"])
+def view_registration(registration_id):
+    registration = RegistrationModel.get(registration_id)
+    event = EventModel.get(registration.event_uid)
+    form = CancellationForm(registration=registration.uid)
+    return render_template(
+        "registration_details.html",
+        registration=registration,
+        event=event,
+        form=form,
+    )
+
+
+@app.route("/cancel/<uuid:registration_id>", methods=["POST"])
+def cancel_registration(registration_id):
+    registration = RegistrationModel.get(registration_id)
+    registration.status = "cancelled"
+    registration.save()
+    return render_template("registration_cancelled.html")

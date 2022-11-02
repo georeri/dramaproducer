@@ -2,7 +2,7 @@
 {% block title %}Level Up - Event Registration{% endblock %}
 {% block body %}
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-6 col-lg-4">
             <div class="text-center py-2 mb-4">
                 <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
             </div>
@@ -27,7 +27,7 @@
                 <fieldset>
                     <legend>Tell us about yourself:</legend>
                     <div class="mb-3">
-                        {{ form.fist_name(size=20, class_="form-control", placeholder="First Name") }}
+                        {{ form.first_name(size=20, class_="form-control", placeholder="First Name") }}
                     </div>
                     <div class="mb-3">
                         {{ form.last_name(size=20, class_="form-control", placeholder="Last Name") }}
@@ -45,11 +45,11 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        {{ form.corp_id(size=20, class_="form-control", placeholder="Corporate ID") }}
-                        {% if form.corp_id.errors %}
+                        {{ form.corp_sid(size=20, class_="form-control", placeholder="Corporate ID") }}
+                        {% if form.corp_sid.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
-                                {% for error in form.corp_id.errors %}
+                                {% for error in form.corp_sid.errors %}
                                     <li>{{ error }}</li>
                                 {% endfor %}
                                 </ul>
@@ -60,13 +60,13 @@
                         {{ form.personal_email(size=20, class_="form-control", placeholder="Personal Email (optional)") }}
                     </div>
                     <div class="mb-3">
-                        {{ form.github_user_id(size=20, class_="form-control", placeholder="GitHub Username (optional)") }}
+                        {{ form.github_username(size=20, class_="form-control", placeholder="GitHub Username (optional)") }}
                     </div>
                 </fieldset>
                 <hr>
                 <div class="d-grid gap-2 mt-4">
                     {{ form.csrf_token }}
-                    <input type="submit" class="btn btn-primary" value="Register">
+                    <input type="submit" class="btn btn-lg btn-primary" value="Register">
                 </div>
             </form>
         </div>

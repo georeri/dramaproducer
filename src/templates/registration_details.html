@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Level Up - Registration Details{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="text-center py-2 mb-4">
+                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
+            </div>
+            <div>
+                <h1>Registration Details</h1>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Registration #</th>
+                            <td>{{ registration.uid }} (<span class="{% if registration.status is eq 'cancelled' %}text-danger{% else %}text-success{% endif %}">{{ registration.status }}</span>)
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Registered Name</th>
+                            <td>{{ registration.first_name|capitalize }} {{ registration.last_name|capitalize }}</td>
+                        </tr>
+                        <tr>
+                            <th>Corporate Email</th>
+                            <td>{{ registration.corp_email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Corporate SID</th>
+                            <td>{{ registration.corp_sid|capitalize }}</td>
+                        </tr>
+                        <tr>
+                            <th>Personal email</th>
+                            <td>
+                                {% if registration.personal_email %}
+                                    {{ registration.personal_email }}
+                                {% else %}
+                                    <span class="text-muted">(not provided)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>GitHub Username</th>
+                            <td>
+                                {% if registration.github_username %}
+                                    {{ registration.github_username }}
+                                {% else %}
+                                    <span class="text-muted">(not provided)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 class="mt-5">Event Information</h2>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Event Name</th>
+                            <td>{{ event.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>registration {{ event.status }} ({{ event.num_seats }} seats total)</td>
+                        </tr>
+                        <tr>
+                            <th>Starts</th>
+                            <td>{{ event.start_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ends</th>
+                            <td>{{ event.end_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Local Timezone</th>
+                            <td>{{ event.local_time_zone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ event.description|safe }}</td>
+                        </tr>
+                        <tr>
+                            <th>Location</th>
+                            <td>
+                                <p>{{ event.location }}</p>
+                                <div class="mapouter">
+                                    <div class="gmap_canvas">
+                                        <iframe width="600" height="500" id="gmap_canvas" src="https://maps.google.com/maps?q={{ event.location|urlencode }}&t=&z=13&ie=UTF8&iwloc=&output=embed" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+                                        <style>.mapouter{position:relative;text-align:right;height:500px;width:600px;}</style>
+                                        <style>.gmap_canvas {overflow:hidden;background:none!important;height:500px;width:600px;}</style>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% if registration.status is ne "cancelled" %}
+                <form action="/cancel/{{ registration.uid }}" method="post" class="mt-5">
+                    {{ form.csrf_token }}
+                    {{ form.registration }}
+                    <div class="d-grid gap-2 mt-4">
+                        <input type="submit" class="btn btn-lg btn-danger" value="Cancel Registration">
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

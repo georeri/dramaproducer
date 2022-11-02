@@ -6,7 +6,6 @@ custom:
   tableName: 'levelup-registration'
   wsgi:
     app: src/app.app
-    packRequirements: true
   pythonRequirements:
     usePipenv: true
     invalidateCaches: true
@@ -48,7 +47,8 @@ functions:
   api:
     handler: src/wsgi_handler.handler
     events:
-      - httpApi: '*'
+      - http: ANY /
+      - http: ANY /{proxy+}
 
 plugins:
   - serverless-wsgi

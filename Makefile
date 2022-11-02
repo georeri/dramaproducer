@@ -8,6 +8,7 @@ reqs:
 
 clean:
 	- rm -rf ./dist
+	- pipenv run serverless requirements clean
 
 prep: clean reqs
 
@@ -26,3 +27,7 @@ serve:
 
 run:
 	FLASK_APP=src/app.py pipenv run flask run
+
+shell:
+	pipenv shell
+
