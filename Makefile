@@ -4,26 +4,32 @@ bootstrap:
 	sls plugin install -n serverless-python-requirements
 
 reqs:
-	pipenv requirements > requirements.txt
+	pipenv requirements > src/requirements.txt
 
-clean:
+clean-pyc: ## remove Python file artifacts
+	find . -name '*.pyc' -exec rm -f {} +
+	find . -name '*.pyo' -exec rm -f {} +
+	find . -name '*~' -exec rm -f {} +
+	find . -name '__pycache__' -exec rm -fr {} +
+
+clean: clean-pyc
 	- rm -rf ./dist
-	- pipenv run serverless requirements clean
+	- cd src && serverless requirements clean
 
 prep: clean reqs
 
 deploy: prep
-	pipenv run serverless deploy
+	cd src && serverless deploy
 
 un-deploy:
-	pipenv run serverless remove
+	cd src && serverless remove
 
 package: prep
 	mkdir -p ./dist
-	pipenv run serverless package --package ./dist
+	cd src && serverless package --package ../dist
 
 serve:
-	IS_OFFLINE=1 sls wsgi serve
+	cd src && serverless wsgi serve
 
 run:
 	FLASK_APP=src/app.py pipenv run flask run

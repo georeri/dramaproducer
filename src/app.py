@@ -34,15 +34,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "ARBITRARY")
 csrf = CSRFProtect(app)
 
 
-@app.template_filter()
-def format_datetime(value, format="medium"):
-    if format == "full":
-        format = "EEEE, d. MMMM y 'at' HH:mm"
-    elif format == "medium":
-        format = "EE dd.MM.y HH:mm"
-    return value.strftime(format)
-
-
 #########################
 # Custom table attributes
 #########################
@@ -193,6 +184,11 @@ def render_template(template_path, *args, **kwargs):
 #########################
 # Flask (API) routes
 #########################
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html")
 
 
 @app.route("/", methods=["GET", "POST"])

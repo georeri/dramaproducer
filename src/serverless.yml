@@ -3,11 +3,10 @@ service: aws-serverless-registration-app
 frameworkVersion: '3'
 
 custom:
-  tableName: 'levelup-registration'
   wsgi:
-    app: src/app.app
+    app: app.app
   pythonRequirements:
-    usePipenv: true
+    usePipenv: false
     invalidateCaches: true
     strip: false
     slim: true
@@ -25,6 +24,7 @@ provider:
   stage: dev
   httpApi:
     cors: true
+    disableDefaultEndpoint: true
   iam:
     role:
       statements:
@@ -36,16 +36,17 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
+            - dynamodb:DescribeTable
           Resource:
-            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/${self:custom.tableName}
+            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/levelup*
+            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/levelup*/index/*
   environment:
-    REGISTRATION_TABLE: ${self:custom.tableName}
     # https://www.serverless.com/blog/aws-secrets-management/
     SECRET_KEY: ${ssm:/FLASK_SECRET_KEY}
 
 functions:
   api:
-    handler: src/wsgi_handler.handler
+    handler: wsgi_handler.handler
     events:
       - http: ANY /
       - http: ANY /{proxy+}
