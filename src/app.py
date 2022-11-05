@@ -9,6 +9,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, SelectField, HiddenField
 from wtforms import validators
 import pynamodb.constants
+from botocore.exceptions import ClientError
+from pynamodb.exceptions import UpdateError
 from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
@@ -159,6 +161,13 @@ class CancellationForm(FlaskForm):
 #########################
 
 
+def is_conditional_error(e):
+    if isinstance(e.cause, ClientError):
+        code = e.cause.response["Error"].get("Code")
+        if code == "ConditionalCheckFailedException":
+            return True
+
+
 def create_all_tables():
     if not EventModel.exists():
         EventModel.create_table(wait=True)
@@ -172,9 +181,13 @@ def get_open_events():
     return sorted(events, key=lambda e: e.start_date)
 
 
-def find_registrations(email):
-    registrations = [r for r in RegistrationModel.scan() if r.corp_email == email]
-    return sorted(registrations, key=lambda e: e.start_date)
+def get_event_registrations(event):
+    registrations = [
+        r
+        for r in RegistrationModel.scan()
+        if r.event_uid == event.uid  # and r.status != "cancelled"
+    ]
+    return sorted(registrations, key=lambda r: r.last_name)
 
 
 def render_template(template_path, *args, **kwargs):
@@ -222,6 +235,30 @@ def view_registration(registration_id):
 @app.route("/cancel/<uuid:registration_id>", methods=["POST"])
 def cancel_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
-    registration.status = "cancelled"
-    registration.save()
+    registration.update(actions=[RegistrationModel.status.set("cancelled")])
     return render_template("registration_cancelled.html")
+
+
+@app.route("/check-in/<uuid:registration_id>", methods=["GET"])
+def event_checkin(registration_id):
+    registration = RegistrationModel.get(registration_id)
+    try:
+        registration.update(
+            actions=[RegistrationModel.status.set("attended")],
+            condition=(RegistrationModel.status != "cancelled")
+            & (RegistrationModel.status != "attended"),
+        )
+        result = (
+            f"Thanks {registration.first_name.capitalize()}, you are all checked-in!"
+        )
+    except UpdateError as e:
+        if is_conditional_error(e):
+            result = f"Sorry {registration.first_name.capitalize()}, you can't check-in because this registration is marked as <i>'{registration.status}'</i>"
+    return render_template("attendance.html", result=result)
+
+
+@app.route("/roster/<uuid:event_id>", methods=["GET"])
+def event_roster(event_id):
+    event = EventModel.get(event_id)
+    registrations = get_event_registrations(event)
+    return render_template("roster.html", registrations=registrations)
