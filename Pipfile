@@ -19,5 +19,6 @@ six = "==1.16.0"
 urllib3 = "==1.26.12"
 werkzeug = "==1.0.1"
 flask-wtf = "*"
+segno = "*"
 
 [dev-packages]

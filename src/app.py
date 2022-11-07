@@ -1,5 +1,4 @@
-import os
-import uuid
+import os, io, uuid
 from typing import Any
 from pathlib import Path
 from flask import Flask, jsonify, make_response, redirect
@@ -15,6 +14,7 @@ from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
 from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute, BooleanAttribute, MapAttribute
+import segno
 
 #########################
 # CONSTANTS
@@ -244,6 +244,17 @@ def render_template(template_path, *args, **kwargs):
     return ENV.get_template(template_path).render(*args, **kwargs)
 
 
+def makeQR(value, prefix=""):
+    qrcode = segno.make(prefix + str(value))
+    buff = io.BytesIO()
+    qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
+    byte_str = buff.getvalue()
+    text_obj = byte_str.decode("UTF-8")
+    return text_obj
+
+
+ENV.filters["makeQR"] = makeQR
+
 #########################
 # Flask (API) routes
 #########################
@@ -304,7 +315,7 @@ def event_checkin(registration_id):
     except UpdateError as e:
         if is_conditional_error(e):
             result = f"Sorry {registration.first_name.capitalize()}, you can't check-in because this registration is marked as <i>'{registration.status}'</i>"
-    return render_template("attendance.html", result=result)
+    return render_template("checkin.html", result=result)
 
 
 @app.route("/roster/<uuid:event_id>", methods=["GET"])
@@ -324,3 +335,4 @@ def team_home():
 @app.route("/team/registration_success", methods=["GET"])
 def team_registration_success():
     return render_template("team_registration_success.html")
+
