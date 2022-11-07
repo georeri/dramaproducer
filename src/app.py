@@ -137,7 +137,7 @@ class RegistrationModel(Model):
     github_username = UnicodeAttribute(null=True)
 
     def can_transition_to(self, target_state):
-        return target_state in REGISTRATION_STATES[self.status]
+        return target_state in REGISTRATION_STATES.get(self.status, [])
 
     def transition_to(self, target_state):
         if self.can_transition_to(target_state):
@@ -276,7 +276,7 @@ def get_event_registrations(event):
     registrations = [
         r
         for r in RegistrationModel.scan()
-        if r.event_uid == event.uid  # and r.status != "cancelled"
+        if r.event_uid == event.uid and r.status != "cancelled"
     ]
     return sorted(registrations, key=lambda r: r.last_name)
 
