@@ -334,7 +334,9 @@ def event_checkin(registration_id):
 def event_roster(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
-    return render_template("event_details.html", **locals())
+    return render_template(
+        "event_details.html", registrations=registrations, event=event
+    )
 
 
 @app.route("/team", methods=["GET", "POST"])
