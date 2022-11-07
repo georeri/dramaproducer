@@ -139,8 +139,8 @@ class TeamModel(Model):
     name = UnicodeAttribute()
     num_members = NumberAttribute()
     tech_stack = UnicodeAttribute()
-    repo_url = UnicodeAttribute()
-    env_urls = MapAttribute()
+    repo_url = UnicodeAttribute(null=True)
+    env_urls = MapAttribute(null=True)
 
 
 #########################
@@ -200,7 +200,7 @@ class CancellationForm(FlaskForm):
 
 class TeamForm(FlaskForm):
     table_number = IntegerField("Table number", validators=[validators.DataRequired()])
-    team_name = StringField("Team name", validators=[validators.DataRequired()])
+    team_name = StringField("Angry Rancors", validators=[validators.DataRequired()])
     num_members = IntegerField(
         "Num Team Members", validators=[validators.DataRequired()]
     )
