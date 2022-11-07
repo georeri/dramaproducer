@@ -1,5 +1,4 @@
-import os
-import uuid
+import os, io, uuid
 from typing import Any
 from pathlib import Path
 from flask import Flask, jsonify, make_response, redirect
@@ -15,6 +14,7 @@ from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
 from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute
+import segno
 
 #########################
 # CONSTANTS
@@ -204,6 +204,17 @@ def render_template(template_path, *args, **kwargs):
     return ENV.get_template(template_path).render(*args, **kwargs)
 
 
+def makeQR(value, prefix=""):
+    qrcode = segno.make(prefix + str(value))
+    buff = io.BytesIO()
+    qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
+    byte_str = buff.getvalue()
+    text_obj = byte_str.decode("UTF-8")
+    return text_obj
+
+
+ENV.filters["makeQR"] = makeQR
+
 #########################
 # Flask (API) routes
 #########################
@@ -271,4 +282,4 @@ def event_checkin(registration_id):
 def event_roster(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
-    return render_template("roster.html", registrations=registrations)
+    return render_template("roster.html", registrations=registrations, event=event)

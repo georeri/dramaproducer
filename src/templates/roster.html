@@ -1,17 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Level Up - Registration Check-In{% endblock %}
+{% block title %}Level Up - Course Roster{% endblock %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="text-center py-2 mb-4">
                 <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
-                <h1 class="my-5">{{ result|safe }}</h1>
+                <h1 class="fs-3 my-3">{{ event.name }}</h1>
             </div>
-            <ul>
-                {% for r in registrations %}
-                    <li>{{ r.last_name.capitalize() }}, {{ r.first_name.capitalize() }} ({{ r.corp_email }})</li>
-                {% endfor %}
-            </ul>
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Last Name</th>
+                        <th>First Name</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Attendance QR</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    {% for r in registrations %}
+                    <tr>
+                        <td>{{ r.last_name.capitalize() }}</td>
+                        <td>{{ r.first_name.capitalize() }}</td>
+                        <td>{{ r.corp_email }}</td>
+                        <td>{{ r.status }}</td>
+                        <td class="text-end">{{ r.uid|makeQR('https://registration.levelup-program.com/check-in/')|safe }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 {% endblock %}
