@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Level Up - Event Registration{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center py-2 mb-4">
+                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
+            </div>
+            <h1>Team Registration</h1>
+            <hr>
+            <form method="post">
+                <fieldset class="mb-4">
+                    <div class="mb-3">
+                        {{ form.table_number(size=20, class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.team_name(size=20, class_="form-control", placeholder="Team Name") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.num_members(size=20, class_="form-control", placeholder="6") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.tech_stack(size=20, class_="form-control") }}
+                    </div>
+                </fieldset>
+                <hr>
+                <div class="d-grid gap-2 mt-4">
+                    {{ form.csrf_token }}
+                    <input type="submit" class="btn btn-lg btn-primary" value="Register">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

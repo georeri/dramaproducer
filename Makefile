@@ -1,7 +1,7 @@
 bootstrap:
 	npm install -g serverless
-	sls plugin install -n serverless-wsgi
-	sls plugin install -n serverless-python-requirements
+	cd src && sls plugin install -n serverless-wsgi
+	cd src && sls plugin install -n serverless-python-requirements
 
 reqs:
 	pipenv requirements > src/requirements.txt
