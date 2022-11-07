@@ -5,7 +5,14 @@ from flask import Flask, jsonify, make_response, redirect
 from jinja2 import Environment, FileSystemLoader
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, SelectField, HiddenField, IntegerField, RadioField
+from wtforms import (
+    StringField,
+    EmailField,
+    SelectField,
+    HiddenField,
+    IntegerField,
+    RadioField,
+)
 from wtforms import validators
 import pynamodb.constants
 from botocore.exceptions import ClientError
@@ -13,7 +20,13 @@ from pynamodb.exceptions import UpdateError
 from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
-from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute, BooleanAttribute, MapAttribute
+from pynamodb.attributes import (
+    UnicodeAttribute,
+    NumberAttribute,
+    UTCDateTimeAttribute,
+    BooleanAttribute,
+    MapAttribute,
+)
 import segno
 
 #########################
@@ -114,6 +127,7 @@ class RegistrationModel(Model):
     personal_email = UnicodeAttribute(null=True)
     github_username = UnicodeAttribute(null=True)
 
+
 class TeamModel(Model):
     class Meta:
         table_name = "levelup-teams"
@@ -127,6 +141,7 @@ class TeamModel(Model):
     tech_stack = UnicodeAttribute()
     repo_url = UnicodeAttribute()
     env_urls = MapAttribute()
+
 
 #########################
 # Form definitions
@@ -182,15 +197,18 @@ class RegistrationForm(FlaskForm):
 class CancellationForm(FlaskForm):
     registration = HiddenField(validators=[validators.UUID()])
 
+
 class TeamForm(FlaskForm):
-    table_number = IntegerField("Table number", validators=[validators.DataREquired()])
+    table_number = IntegerField("Table number", validators=[validators.DataRequired()])
     team_name = StringField("Team name", validators=[validators.DataRequired()])
-    num_members= IntegerField("Num Team Members", validators=[validators.DataRequired()])
+    num_members = IntegerField(
+        "Num Team Members", validators=[validators.DataRequired()]
+    )
     tech_stack = RadioField(
         "Choose a tech stack",
         validators=[validators.DataRequired()],
         description="Click the box above to choose a tech stack",
-        choices=[('dotnet','C#'),('java','Java'),('python','Python')]
+        choices=[("dotnet", "C#"), ("java", "Java"), ("python", "Python")],
     )
 
     def save(self):
@@ -200,7 +218,6 @@ class TeamForm(FlaskForm):
             num_members=self.num_members.data,
             tech_stack=self.tech_stack.data,
         ).save()
-
 
 
 #########################
@@ -271,16 +288,11 @@ def home():
     form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
         form.save()
-        return redirect("/registration_success")
+        return render_template("registration_success.html")
     return render_template("index.html", form=form)
 
 
-@app.route("/registration_success", methods=["GET"])
-def registration_success():
-    return render_template("registration_success.html")
-
-
-@app.route("/view/<uuid:registration_id>", methods=["GET"])
+@app.route("/registration/<uuid:registration_id>", methods=["GET"])
 def view_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
     event = EventModel.get(registration.event_uid)
@@ -293,14 +305,14 @@ def view_registration(registration_id):
     )
 
 
-@app.route("/cancel/<uuid:registration_id>", methods=["POST"])
+@app.route("/registration/<uuid:registration_id>", methods=["DELETE"])
 def cancel_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
     registration.update(actions=[RegistrationModel.status.set("cancelled")])
     return render_template("registration_cancelled.html")
 
 
-@app.route("/check-in/<uuid:registration_id>", methods=["GET"])
+@app.route("/registration/<uuid:registration_id>/check-in/", methods=["GET"])
 def event_checkin(registration_id):
     registration = RegistrationModel.get(registration_id)
     try:
@@ -318,21 +330,17 @@ def event_checkin(registration_id):
     return render_template("checkin.html", result=result)
 
 
-@app.route("/roster/<uuid:event_id>", methods=["GET"])
+@app.route("/event/<uuid:event_id>", methods=["GET"])
 def event_roster(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
-    return render_template("roster.html", registrations=registrations)
+    return render_template("event_details.html", **locals())
+
 
 @app.route("/team", methods=["GET", "POST"])
 def team_home():
     form = TeamForm()
     if form.validate_on_submit():
         form.save()
-        return redirect("/team/registration_success")
-    return render_template("index.html", form=form)
-
-@app.route("/team/registration_success", methods=["GET"])
-def team_registration_success():
-    return render_template("team_registration_success.html")
-
+        return render_template("team_registration_success.html")
+    return render_template("team_registration.html", form=form)

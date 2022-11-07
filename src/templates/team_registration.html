@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Level Up - Event Registration{% endblock %}
+{% block title %}Level Up - Team Registration{% endblock %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
@@ -11,7 +11,7 @@
             <form method="post">
                 <fieldset class="mb-4">
                     <div class="mb-3">
-                        {{ form.table_number(size=20, class_="form-control") }}
+                        {{ form.table_number(size=20, class_="form-control", placeholder="1") }}
                     </div>
                     <div class="mb-3">
                         {{ form.team_name(size=20, class_="form-control", placeholder="Team Name") }}

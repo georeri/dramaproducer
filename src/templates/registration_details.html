@@ -93,7 +93,7 @@
                     </tbody>
                 </table>
                 {% if registration.status is ne "cancelled" %}
-                <form action="/cancel/{{ registration.uid }}" method="post" class="mt-5">
+                <form action="/cancel/{{ registration.uid }}" method="delete" class="mt-5">
                     {{ form.csrf_token }}
                     {{ form.registration }}
                     <div class="d-grid gap-2 mt-4">
