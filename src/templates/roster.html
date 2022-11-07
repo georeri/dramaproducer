@@ -23,8 +23,17 @@
                         <td>{{ r.last_name.capitalize() }}</td>
                         <td>{{ r.first_name.capitalize() }}</td>
                         <td>{{ r.corp_email }}</td>
-                        <td>{{ r.status }}</td>
-                        <td class="text-end">{{ r.uid|makeQR('https://registration.levelup-program.com/check-in/')|safe }}</td>
+                        <td>{{ r.status.upper() }}</td>
+                        <td class="text-center">
+                            <div>
+                                {{ r.uid|makeQR('https://registration.levelup-program.com/check-in/')|safe }}
+                            </div>
+                            <div>
+                                <a class="btn btn-primary btn-sm" href="/check-in/{{ r.uid }}">
+                                    Check-in
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

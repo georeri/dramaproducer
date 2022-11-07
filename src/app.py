@@ -275,7 +275,7 @@ def event_checkin(registration_id):
     except UpdateError as e:
         if is_conditional_error(e):
             result = f"Sorry {registration.first_name.capitalize()}, you can't check-in because this registration is marked as <i>'{registration.status}'</i>"
-    return render_template("attendance.html", result=result)
+    return render_template("checkin.html", result=result)
 
 
 @app.route("/roster/<uuid:event_id>", methods=["GET"])
