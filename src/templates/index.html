@@ -13,6 +13,7 @@
                     <legend>Select an event:</legend>
                     <div class="">
                         {{ form.event(class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.event.description }}</div>
                         {% if form.event.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
