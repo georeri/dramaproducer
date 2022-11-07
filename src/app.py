@@ -117,7 +117,11 @@ class RegistrationModel(Model):
 
 
 class RegistrationForm(FlaskForm):
-    event = SelectField("Please choose an event", validators=[validators.UUID()])
+    event = SelectField(
+        "Please choose an event",
+        description="Click the box above to choose an event",
+        validators=[validators.UUID()],
+    )
     first_name = StringField("First name", validators=[validators.DataRequired()])
     last_name = StringField("Last name", validators=[validators.DataRequired()])
     corp_email = EmailField(
@@ -130,7 +134,7 @@ class RegistrationForm(FlaskForm):
     )
     corp_sid = StringField(
         "Corporate SID",
-        description="Your enterprise login ID, in the form of 'X000000'",
+        description="Your enterprise login ID in the form of 'X000000'",
         validators=[
             validators.DataRequired(),
             validators.Length(max=7),
@@ -143,7 +147,7 @@ class RegistrationForm(FlaskForm):
     )
     github_username = StringField(
         "GitHub username",
-        description="Your public GitHub username, not associated with an enterprise",
+        description="Your public GitHub (non-Wells Fargo) username",
     )
 
     def save(self):
