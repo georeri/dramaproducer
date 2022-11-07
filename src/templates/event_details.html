@@ -7,9 +7,11 @@
                 <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
                 <h1 class="fs-3 my-3">{{ event.name }}</h1>
             </div>
+
             <table class="table table-striped align-middle">
                 <thead>
                     <tr>
+                        <th>&nbsp;</th>
                         <th>Last Name</th>
                         <th>First Name</th>
                         <th>Email</th>
@@ -20,10 +22,11 @@
                 <tbody class="table-group-divider">
                     {% for r in registrations %}
                     <tr>
+                        <td><a href="/registration/{{ r.uid }}"><i class="fa-solid fa-square-arrow-up-right"></i></a></td>
                         <td>{{ r.last_name.capitalize() }}</td>
                         <td>{{ r.first_name.capitalize() }}</td>
                         <td>{{ r.corp_email }}</td>
-                        <td><a href="/registration/{{ r.uid }}">{{ r.status.upper() }}</a></td>
+                        <td>{{ r.status.upper() }}</td>
                         <td class="text-center">
                             {% if r.can_transition_to("attended") %}
                             <div>
