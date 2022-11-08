@@ -51,7 +51,7 @@ REGISTRATION_STATES = {
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "ARBITRARY")
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)
 
 
 #########################
@@ -314,6 +314,16 @@ def home():
         form.save()
         return render_template("registration_success.html")
     return render_template("index.html", form=form)
+
+
+@app.route("/registration", methods=["PUT"])
+def create_registration_api():
+    form = RegistrationForm(meta={"csrf": False})
+    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
+    if form.validate_on_submit():
+        form.save()
+        return jsonify(form.data)
+    return jsonify({"errors": form.errors})
 
 
 @app.route("/registration/<uuid:registration_id>", methods=["GET"])
