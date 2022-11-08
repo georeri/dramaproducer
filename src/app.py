@@ -200,7 +200,7 @@ class CancellationForm(FlaskForm):
 
 class TeamForm(FlaskForm):
     table_number = IntegerField("Table number", validators=[validators.DataRequired()])
-    team_name = StringField("Angry Rancors", validators=[validators.DataRequired()])
+    team_name = StringField("Team Name", validators=[validators.DataRequired()])
     num_members = IntegerField(
         "Num Team Members", validators=[validators.DataRequired()]
     )
