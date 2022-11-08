@@ -1,6 +1,8 @@
 import os, io, uuid
 from typing import Any
 from pathlib import Path
+from datetime import datetime
+from datetime import timezone
 from flask import Flask, jsonify, make_response, redirect
 from jinja2 import Environment, FileSystemLoader
 from flask_wtf.csrf import CSRFProtect
@@ -203,6 +205,7 @@ class RegistrationForm(FlaskForm):
     )
 
     def save(self):
+        e = EventModel.get(self.event.data)
         r = RegistrationModel(
             event_uid=self.event.data,
             first_name=self.first_name.data,
@@ -211,6 +214,11 @@ class RegistrationForm(FlaskForm):
             corp_sid=self.corp_sid.data,
             personal_email=self.personal_email.data,
             github_username=self.github_username.data,
+            status="attended"
+            if e.start_date
+            < datetime.utcnow().replace(tzinfo=timezone.utc)
+            < e.end_date
+            else "registered",
         )
         r.save()
         return r
