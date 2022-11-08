@@ -229,7 +229,14 @@ class CancellationForm(FlaskForm):
 
 
 class TeamForm(FlaskForm):
-    table_number = IntegerField("Table number", validators=[validators.DataRequired()])
+    table_number = IntegerField(
+        "Table number",
+        description="From the sign on your table",
+        validators=[
+            validators.DataRequired(),
+            validators.NoneOf(sorted([t.team_number for t in TeamModel.scan()])),
+        ],
+    )
     team_name = StringField("Team Name", validators=[validators.DataRequired()])
     num_members = IntegerField(
         "Num Team Members", validators=[validators.DataRequired()]
