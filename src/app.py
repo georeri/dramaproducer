@@ -39,6 +39,11 @@ ENV = Environment(
     loader=FileSystemLoader(TEMPLATE_ROOT_DIR),
     autoescape=True,
 )
+REGISTRATION_STATES = {
+    "registered": ["cancelled", "attended"],
+    "attended": ["cancelled"],
+    "cancelled": [],
+}
 
 #########################
 # Setup
@@ -46,7 +51,7 @@ ENV = Environment(
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "ARBITRARY")
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)
 
 
 #########################
@@ -110,6 +115,10 @@ class EventModel(Model):
     close_comms_sent = BooleanAttribute(default=False)
 
 
+class StateTransitionError(Exception):
+    pass
+
+
 class RegistrationModel(Model):
     class Meta:
         table_name = "levelup-registration"
@@ -119,13 +128,24 @@ class RegistrationModel(Model):
 
     uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
     event_uid = UUIDAttribute()
-    status = UnicodeAttribute(default="new")
+    status = UnicodeAttribute(default="registered")
     first_name = UnicodeAttribute()
     last_name = UnicodeAttribute()
     corp_email = UnicodeAttribute()
     corp_sid = UnicodeAttribute()
     personal_email = UnicodeAttribute(null=True)
     github_username = UnicodeAttribute(null=True)
+
+    def can_transition_to(self, target_state):
+        return target_state in REGISTRATION_STATES.get(self.status, [])
+
+    def transition_to(self, target_state):
+        if self.can_transition_to(target_state):
+            self.status = target_state
+        else:
+            raise StateTransitionError(
+                f"Can't transition from {self.status} to {target_state}"
+            )
 
 
 class TeamModel(Model):
@@ -183,7 +203,7 @@ class RegistrationForm(FlaskForm):
     )
 
     def save(self):
-        RegistrationModel(
+        r = RegistrationModel(
             event_uid=self.event.data,
             first_name=self.first_name.data,
             last_name=self.last_name.data,
@@ -191,7 +211,9 @@ class RegistrationForm(FlaskForm):
             corp_sid=self.corp_sid.data,
             personal_email=self.personal_email.data,
             github_username=self.github_username.data,
-        ).save()
+        )
+        r.save()
+        return r
 
 
 class CancellationForm(FlaskForm):
@@ -212,12 +234,14 @@ class TeamForm(FlaskForm):
     )
 
     def save(self):
-        TeamModel(
+        t = TeamModel(
             team_number=self.table_number.data,
             name=self.team_name.data,
             num_members=self.num_members.data,
             tech_stack=self.tech_stack.data,
-        ).save()
+        )
+        t.save()
+        return t
 
 
 #########################
@@ -252,7 +276,7 @@ def get_event_registrations(event):
     registrations = [
         r
         for r in RegistrationModel.scan()
-        if r.event_uid == event.uid  # and r.status != "cancelled"
+        if r.event_uid == event.uid and r.status != "cancelled"
     ]
     return sorted(registrations, key=lambda r: r.last_name)
 
@@ -292,6 +316,16 @@ def home():
     return render_template("index.html", form=form)
 
 
+@app.route("/registration", methods=["PUT"])
+def create_registration_api():
+    form = RegistrationForm(meta={"csrf": False})
+    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
+    if form.validate_on_submit():
+        form.save()
+        return jsonify(form.data)
+    return jsonify({"errors": form.errors})
+
+
 @app.route("/registration/<uuid:registration_id>", methods=["GET"])
 def view_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
@@ -305,7 +339,7 @@ def view_registration(registration_id):
     )
 
 
-@app.route("/registration/<uuid:registration_id>", methods=["DELETE"])
+@app.route("/registration/<uuid:registration_id>", methods=["POST"])
 def cancel_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
     registration.update(actions=[RegistrationModel.status.set("cancelled")])
