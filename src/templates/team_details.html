@@ -14,7 +14,7 @@
                 <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
             </div>
             <div>
-                <h1>Team Details</h1>
+                <h1>Team Details / {{ team.name.capitalize() }}</h1>
                 <div class="table-responsive">
                     <table class="table">
                         <tbody>
@@ -46,8 +46,11 @@
                                 <th>Repo URL</th>
                                 <td>
                                     <a href="{{ team.repo_url }}" target="_blank">
-                                        <i class="fa-brands fa-github me-2"></i>
-                                        {{ team.repo_url }}
+                                        {% if team.repo_url %}
+                                            <i class="fa-brands fa-github me-2"></i>{{ team.repo_url }}
+                                        {% else %}
+                                            <i class="fa-solid fa-arrows-rotate me-2"></i>Your repository is still being created. Check back here later.
+                                        {% endif %}
                                     </a>
                                 </td>
                             </tr>
@@ -55,12 +58,18 @@
                                 <th>Environment URLs</th>
                                 <td>
                                     <ul class="ps-1">
-                                    {% for url in team.env_urls %}
+                                    {% if team.env_urls %}
+                                        {% for url in team.env_urls %}
+                                            <li class="no-bullet">
+                                                <i class="fa-solid fa-laptop-code me-2"></i>
+                                                <a href="{{ url }}" target="_blank">{{ url }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    {% else %}
                                         <li class="no-bullet">
-                                            <i class="fa-solid fa-laptop-code me-2"></i>
-                                            <a href="{{ url }}" target="_blank">{{ url }}</a>
+                                            <i class="fa-solid fa-arrows-rotate me-2"></i>Your environments are still being created. Check back here later.
                                         </li>
-                                    {% endfor %}
+                                    {% endif %}
                                     </ul>
                                 </td>
                             </tr>

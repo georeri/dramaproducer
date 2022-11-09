@@ -232,20 +232,25 @@ class CancellationForm(FlaskForm):
 class TeamForm(FlaskForm):
     table_number = IntegerField(
         "Table number",
-        description="From the sign on your table",
+        description="Table number",
         validators=[
             validators.DataRequired(),
             validators.NoneOf(sorted([t.team_number for t in TeamModel.scan()])),
         ],
     )
-    team_name = StringField("Team Name", validators=[validators.DataRequired()])
+    team_name = StringField(
+        "Team Name",
+        description="Name of your team",
+        validators=[validators.DataRequired()],
+    )
     num_members = IntegerField(
-        "Num Team Members", validators=[validators.DataRequired()]
+        "Number of members",
+        description="Total number of people on the team (4-7)",
+        validators=[validators.DataRequired(), validators.NumberRange(min=4, max=7)],
     )
     tech_stack = RadioField(
         "Choose a tech stack",
         validators=[validators.DataRequired()],
-        description="Click the box above to choose a tech stack",
         choices=[("dotnet", "C#"), ("java", "Java"), ("python", "Python")],
     )
 
@@ -320,6 +325,11 @@ ENV.filters["makeQR"] = makeQR
 @app.errorhandler(404)
 def not_found(e):
     return render_template("404.html")
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("500.html")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -399,8 +409,8 @@ def event_list():
 def team_create():
     form = TeamForm()
     if form.validate_on_submit():
-        form.save()
-        return render_template("team_registration_success.html")
+        t = form.save()
+        return redirect(f"/team/{t.team_number}")
     return render_template("team_registration.html", form=form)
 
 

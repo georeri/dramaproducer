@@ -11,8 +11,7 @@
             <form method="post" action="/team">
                 <fieldset class="mb-4">
                     <div class="mb-3">
-                        {{ form.table_number.label }}
-                        {{ form.table_number(size=20, class_="form-control") }}
+                        {{ form.table_number(size=20, class_="form-control", placeholder=form.table_number.description) }}
                         {% if form.table_number.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
@@ -24,8 +23,7 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        {{ form.team_name.label }}
-                        {{ form.team_name(size=20, class_="form-control", placeholder="Angry Rancors") }}
+                        {{ form.team_name(size=20, class_="form-control", placeholder=form.team_name.description) }}
                         {% if form.team_name.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
@@ -37,8 +35,7 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        {{ form.num_members.label }}
-                        {{ form.num_members(size=20, class_="form-control") }}
+                        {{ form.num_members(size=20, class_="form-control", placeholder=form.num_members.description) }}
                         {% if form.num_members.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
@@ -52,6 +49,7 @@
                     <div class="mb-3">
                         {{ form.tech_stack.label }}
                         {{ form.tech_stack(class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.tech_stack.description }}</div>
                         {% if form.tech_stack.errors %}
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
