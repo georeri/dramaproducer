@@ -73,7 +73,17 @@
                         <td>{{ r.last_name.capitalize() }}</td>
                         <td>{{ r.first_name.capitalize() }}</td>
                         <td>{{ r.corp_email }}</td>
-                        <td>{{ r.status.upper() }}</td>
+                        <td>
+                            <ul class="list-unstyled">
+                                <li><small>Registration: {{ r.status.upper() }}</small></li>
+                                {% if r.comms_status %}
+                                <li><small>Communications: {{ r.comms_status.upper() }}</small></li>
+                                {% endif %}
+                                {% if r.gh_status %}
+                                <li><small title="{{ r.github_username }}">GitHub Access: {{ r.gh_status.upper() }}</small></li>
+                                {% endif %}
+                            </ul>
+                        </td>
                         <td class="text-center">
                             {% if r.can_transition_to("attended") %}
                             <div>

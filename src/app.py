@@ -138,6 +138,8 @@ class RegistrationModel(Model):
     corp_sid = UnicodeAttribute()
     personal_email = UnicodeAttribute(null=True)
     github_username = UnicodeAttribute(null=True)
+    gh_status = UnicodeAttribute(null=True)
+    comms_status = UnicodeAttribute(null=True)
 
     def can_transition_to(self, target_state):
         return target_state in REGISTRATION_STATES.get(self.status, [])
@@ -203,6 +205,9 @@ class RegistrationForm(FlaskForm):
     github_username = StringField(
         "GitHub username",
         description="Your public GitHub (non-Wells Fargo) username",
+        validators=[
+            validators.DataRequired(),
+        ],
     )
 
     def save(self):
