@@ -332,24 +332,19 @@ def server_error(e):
     return render_template("500.html")
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def home():
+    return redirect("/register")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def create_registration():
     form = RegistrationForm()
     form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
         form.save()
         return render_template("registration_success.html")
     return render_template("index.html", form=form)
-
-
-@app.route("/registration", methods=["PUT"])
-def create_registration_api():
-    form = RegistrationForm(meta={"csrf": False})
-    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
-    if form.validate_on_submit():
-        form.save()
-        return jsonify(form.data)
-    return jsonify({"errors": form.errors})
 
 
 @app.route("/registration/<uuid:registration_id>", methods=["GET"])
