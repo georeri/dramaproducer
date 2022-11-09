@@ -19,7 +19,6 @@ from wtforms import validators
 import pynamodb.constants
 from botocore.exceptions import ClientError
 from pynamodb.exceptions import UpdateError
-from pynamodb.attributes import Attribute
 from pynamodb.models import Model
 from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
 from pynamodb.attributes import (
@@ -28,6 +27,8 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
     BooleanAttribute,
     MapAttribute,
+    Attribute,
+    ListAttribute,
 )
 import segno
 
@@ -162,7 +163,7 @@ class TeamModel(Model):
     num_members = NumberAttribute()
     tech_stack = UnicodeAttribute()
     repo_url = UnicodeAttribute(null=True)
-    env_urls = MapAttribute(null=True)
+    env_urls = ListAttribute(null=True)
 
 
 #########################
@@ -388,10 +389,28 @@ def event_roster(event_id):
     )
 
 
+@app.route("/events/", methods=["GET"])
+def event_list():
+    events = EventModel.scan()
+    return render_template("event_list.html", events=events)
+
+
 @app.route("/team", methods=["GET", "POST"])
-def team_home():
+def team_create():
     form = TeamForm()
     if form.validate_on_submit():
         form.save()
         return render_template("team_registration_success.html")
     return render_template("team_registration.html", form=form)
+
+
+@app.route("/team/<int:team_number>", methods=["GET"])
+def team_details(team_number):
+    team = TeamModel.get(team_number)
+    return render_template("team_details.html", team=team)
+
+
+@app.route("/teams/", methods=["GET"])
+def team_list():
+    teams = TeamModel.scan()
+    return render_template("team_list.html", teams=teams)
