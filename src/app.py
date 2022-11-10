@@ -116,6 +116,7 @@ class EventModel(Model):
     two_week_comms_sent = BooleanAttribute(default=False)
     next_week_comms_sent = BooleanAttribute(default=False)
     close_comms_sent = BooleanAttribute(default=False)
+    gh_team = UnicodeAttribute(null=True)
 
 
 class StateTransitionError(Exception):
@@ -140,6 +141,7 @@ class RegistrationModel(Model):
     github_username = UnicodeAttribute(null=True)
     gh_status = UnicodeAttribute(null=True)
     comms_status = UnicodeAttribute(null=True)
+    gh_status = UnicodeAttribute(null=True)
 
     def can_transition_to(self, target_state):
         return target_state in REGISTRATION_STATES.get(self.status, [])
