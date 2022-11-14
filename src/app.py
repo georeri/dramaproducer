@@ -313,8 +313,11 @@ def render_template(template_path, *args, **kwargs):
     return ENV.get_template(template_path).render(*args, **kwargs)
 
 
-def makeQR(value, prefix=""):
-    qrcode = segno.make(prefix + str(value))
+def makeQR(value):
+    url = (
+        f"https://registration.levelup-program.com/registration/{str(value)}/check-in/"
+    )
+    qrcode = segno.make(url)
     buff = io.BytesIO()
     qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
     byte_str = buff.getvalue()

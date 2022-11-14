@@ -87,7 +87,7 @@
                         <td class="text-center">
                             {% if r.can_transition_to("attended") %}
                             <div>
-                                {{ r.uid|makeQR('https://registration.levelup-program.com/check-in/')|safe }}
+                                {{ r.uid|makeQR|safe }}
                             </div>
                             <div>
                                 <a class="btn btn-primary btn-sm" href="/registration/{{ r.uid }}/check-in/">
