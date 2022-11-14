@@ -98,7 +98,7 @@ class UUIDAttribute(Attribute[uuid.UUID]):
 class EventModel(Model):
     class Meta:
         table_name = "levelup-events"
-        region = "us-east-1"
+        region = os.environ.get("AWS_REGION", "us-east-1")
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
@@ -126,7 +126,7 @@ class StateTransitionError(Exception):
 class RegistrationModel(Model):
     class Meta:
         table_name = "levelup-registration"
-        region = "us-east-1"
+        region = os.environ.get("AWS_REGION", "us-east-1")
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
 
@@ -158,7 +158,7 @@ class RegistrationModel(Model):
 class TeamModel(Model):
     class Meta:
         table_name = "levelup-teams"
-        region = "us-east-1"
+        region = os.environ.get("AWS_REGION", "us-east-1")
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
