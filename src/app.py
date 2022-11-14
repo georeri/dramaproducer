@@ -212,6 +212,12 @@ class RegistrationForm(FlaskForm):
         ],
     )
 
+    def validate_github_username(form, field):
+        if "@" in field.data:
+            raise validators.ValidationError(
+                "Please enter your GitHub username, not an email address"
+            )
+
     def save(self):
         e = EventModel.get(self.event.data)
         r = RegistrationModel(

@@ -62,10 +62,28 @@
                     <div class="mb-3">
                         {{ form.github_username(size=20, class_="form-control", placeholder="GitHub Username") }}
                         <div class="form-text ps-2">{{ form.github_username.description }}</div>
+                        {% if form.github_username.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.github_username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="mb-3">
                         {{ form.personal_email(size=20, class_="form-control", placeholder="Personal Email (optional)") }}
                         <div class="form-text ps-2">{{ form.personal_email.description }}</div>
+                        {% if form.personal_email.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.personal_email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     </div>
                 </fieldset>
                 <hr>
