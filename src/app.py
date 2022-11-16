@@ -221,7 +221,16 @@ class RegistrationForm(FlaskForm):
             )
 
     def validate_corp_email(form, field):
-        if len(list(RegistrationModel.scan((RegistrationModel.corp_email == field.data) & (RegistrationModel.status != 'cancelled') & (RegistrationModel.event_uid == form.event.data), attributes_to_get="corp_email"))):
+        if len(
+            list(
+                RegistrationModel.scan(
+                    (RegistrationModel.corp_email == field.data)
+                    & (RegistrationModel.status != "cancelled")
+                    & (RegistrationModel.event_uid == form.event.data),
+                    attributes_to_get="corp_email",
+                )
+            )
+        ):
             raise validators.ValidationError(
                 "Your email address has already registered for this event."
             )
@@ -441,5 +450,5 @@ def team_details(team_number):
 
 @app.route("/teams/", methods=["GET"])
 def team_list():
-    teams = TeamModel.scan()
+    teams = sorted(TeamModel.scan(), key=lambda x: x.team_number)
     return render_template("team_list.html", teams=teams)
