@@ -189,6 +189,8 @@ class RegistrationForm(FlaskForm):
         validators=[
             validators.DataRequired(),
             validators.Regexp(r"^.*@wellsfargo.com$"),
+            # validators.NoneOf(
+            #     ([r.corp_email for r in RegistrationModel.scan(attributes_to_get=['corp_email'])])),
         ],
     )
     corp_sid = StringField(
@@ -216,6 +218,12 @@ class RegistrationForm(FlaskForm):
         if "@" in field.data:
             raise validators.ValidationError(
                 "Please enter your GitHub username, not an email address"
+            )
+
+    def validate_corp_email(form, field):
+        if len(list(RegistrationModel.scan((RegistrationModel.corp_email == field.data) & (RegistrationModel.status != 'cancelled') & (RegistrationModel.event_uid == form.event.data), attributes_to_get="corp_email"))):
+            raise validators.ValidationError(
+                "Your email address has already registered for this event."
             )
 
     def save(self):
