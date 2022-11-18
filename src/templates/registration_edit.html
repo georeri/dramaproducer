@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Level Up - Event Registration{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center py-2 mb-4">
+                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
+            </div>
+            <h1>Event Registration</h1>
+            <hr>
+            <form method="post">
+                <fieldset class="mb-4">
+                    <legend>Select an event:</legend>
+                    <div class="">
+                        {{ form.event(class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.event.description }}</div>
+                        {% if form.event.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.event.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Tell us about yourself:</legend>
+                    <div class="mb-3">
+                        {{ form.first_name(size=20, class_="form-control", placeholder="First Name") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.last_name(size=20, class_="form-control", placeholder="Last Name") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.corp_email(size=20, class_="form-control", placeholder="Corporate Email") }}
+                        <div class="form-text ps-2">{{ form.corp_email.description }}</div>
+                        {% if form.corp_email.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.corp_email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.corp_sid(size=20, class_="form-control", placeholder="Corporate ID") }}
+                        <div class="form-text ps-2">{{ form.corp_sid.description }}</div>
+                        {% if form.corp_sid.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.corp_sid.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.github_username(size=20, class_="form-control", placeholder="GitHub Username") }}
+                        <div class="form-text ps-2">{{ form.github_username.description }}</div>
+                        {% if form.github_username.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.github_username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.personal_email(size=20, class_="form-control", placeholder="Personal Email (optional)") }}
+                        <div class="form-text ps-2">{{ form.personal_email.description }}</div>
+                        {% if form.personal_email.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.personal_email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <hr>
+                <div class="d-grid gap-2 mt-4">
+                    {{ form.csrf_token }}
+                    <input type="submit" class="btn btn-lg btn-primary" value="Register">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

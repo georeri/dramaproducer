@@ -419,6 +419,17 @@ def event_checkin(registration_id):
     return render_template("checkin.html", result=result)
 
 
+@app.route("/registration/<uuid:registration_id>/edit/", methods=["GET", "POST"])
+def edit_registration(registration_id):
+    registration = RegistrationModel.get(registration_id)
+    form = RegistrationForm(data=registration.attribute_values)
+    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
+    if form.validate_on_submit():
+        form.save()
+        return redirect(f"/registration/{registration_id}")
+    return render_template("registration_edit.html", form=form)
+
+
 @app.route("/event/<uuid:event_id>", methods=["GET"])
 def event_roster(event_id):
     event = EventModel.get(event_id)
