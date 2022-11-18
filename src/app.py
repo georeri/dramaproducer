@@ -1,9 +1,10 @@
 import os, io, uuid
+import requests
 from typing import Any
 from pathlib import Path
 from datetime import datetime
 from datetime import timezone
-from flask import Flask, jsonify, make_response, redirect
+from flask import Flask, jsonify, make_response, redirect, request
 from jinja2 import Environment, FileSystemLoader
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
@@ -452,3 +453,40 @@ def team_details(team_number):
 def team_list():
     teams = sorted(TeamModel.scan(), key=lambda x: x.team_number)
     return render_template("team_list.html", teams=teams)
+
+
+#########################
+# Authentication routes
+#########################
+
+
+@app.route("/oauth/github/access-token", methods=["POST"])
+def get_access_token():
+    github_request = requests.post(
+        url="https://github.com/login/oauth/access_token",
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+            "Accept": "application/json",
+        },
+        data=request.form.to_dict(),
+        allow_redirects=False,
+    )
+    response = github_request.json()
+
+    return jsonify(response)
+
+
+@app.route("/oauth/github/user-info", methods=["GET"])
+def get_user_info():
+    github_request = requests.get(
+        url="https://api.github.com/user",
+        headers={
+            "Authorization": "token "
+            + request.headers.get("Authorization").split("Bearer ")[1],
+            "Accept": "application/json",
+        },
+        allow_redirects=False,
+    )
+    response = github_request.json()
+
+    return jsonify({**response, "sub": response["id"]})
