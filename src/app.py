@@ -119,10 +119,8 @@ class EventModel(Model):
     close_comms_sent = BooleanAttribute(default=False)
     gh_team = UnicodeAttribute(null=True)
 
-
 class StateTransitionError(Exception):
     pass
-
 
 class RegistrationModel(Model):
     class Meta:
@@ -155,7 +153,6 @@ class RegistrationModel(Model):
                 f"Can't transition from {self.status} to {target_state}"
             )
 
-
 class TeamModel(Model):
     class Meta:
         table_name = "levelup-teams"
@@ -174,8 +171,6 @@ class TeamModel(Model):
 #########################
 # Form definitions
 #########################
-
-
 class RegistrationForm(FlaskForm):
     event = SelectField(
         "Please choose an event",
@@ -190,8 +185,6 @@ class RegistrationForm(FlaskForm):
         validators=[
             validators.DataRequired(),
             validators.Regexp(r"^.*@wellsfargo.com$"),
-            # validators.NoneOf(
-            #     ([r.corp_email for r in RegistrationModel.scan(attributes_to_get=['corp_email'])])),
         ],
     )
     corp_sid = StringField(
@@ -255,6 +248,27 @@ class RegistrationForm(FlaskForm):
         r.save()
         return r
 
+
+class RegistrationEditForm(RegistrationForm):
+    uid = StringField(
+        "Registration ID",
+        description="Unique system generated ID",
+    )
+
+    def validate_corp_email(form, field):
+        # Override dup check for edits
+        pass
+
+    def save(self):
+        r = RegistrationModel.get(self.uid.data)
+        r.event_uid=self.event.data
+        r.first_name=self.first_name.data
+        r.last_name=self.last_name.data
+        r.corp_email=self.corp_email.data
+        r.corp_sid=self.corp_sid.data
+        r.personal_email=self.personal_email.data
+        r.github_username=self.github_username.data
+        r.save()
 
 class CancellationForm(FlaskForm):
     registration = HiddenField(validators=[validators.UUID()])
@@ -381,7 +395,7 @@ def create_registration():
     return render_template("index.html", form=form)
 
 
-@app.route("/registration/<uuid:registration_id>", methods=["GET"])
+@app.route("/registration/<uuid:registration_id>/", methods=["GET"])
 def view_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
     event = EventModel.get(registration.event_uid)
@@ -422,7 +436,7 @@ def event_checkin(registration_id):
 @app.route("/registration/<uuid:registration_id>/edit/", methods=["GET", "POST"])
 def edit_registration(registration_id):
     registration = RegistrationModel.get(registration_id)
-    form = RegistrationForm(data=registration.attribute_values)
+    form = RegistrationEditForm(data=registration.attribute_values)
     form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
         form.save()

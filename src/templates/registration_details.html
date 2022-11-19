@@ -49,7 +49,22 @@
                         </tr>
                     </tbody>
                 </table>
-
+                {% if registration.can_transition_to("cancelled") %}
+                <form action="/registration/{{ registration.uid }}/edit" method="get" class="mt-2">
+                    {{ form.csrf_token }}
+                    {{ form.registration }}
+                    <div class="d-grid gap-2 mt-2">
+                        <input type="submit" class="btn btn-lg btn-info" value="Edit Registration">
+                    </div>
+                </form>
+                <form action="/registration/{{ registration.uid }}" method="post" class="mt-2">
+                    {{ form.csrf_token }}
+                    {{ form.registration }}
+                    <div class="d-grid gap-2 mt-2">
+                        <input type="submit" class="btn btn-lg btn-danger" value="Cancel Registration">
+                    </div>
+                </form>
+                {% endif %}
                 <h2 class="mt-5">Event Information</h2>
                 <table class="table">
                     <tbody>
@@ -92,15 +107,7 @@
                         </tr>
                     </tbody>
                 </table>
-                {% if registration.can_transition_to("cancelled") %}
-                <form action="/registration/{{ registration.uid }}" method="post" class="mt-5">
-                    {{ form.csrf_token }}
-                    {{ form.registration }}
-                    <div class="d-grid gap-2 mt-4">
-                        <input type="submit" class="btn btn-lg btn-danger" value="Cancel Registration">
-                    </div>
-                </form>
-                {% endif %}
+                
             </div>
         </div>
     </div>
