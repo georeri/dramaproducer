@@ -122,6 +122,7 @@ class EventModel(Model):
 class StateTransitionError(Exception):
     pass
 
+
 class RegistrationModel(Model):
     class Meta:
         table_name = "levelup-registration"
@@ -138,9 +139,12 @@ class RegistrationModel(Model):
     corp_sid = UnicodeAttribute()
     personal_email = UnicodeAttribute(null=True)
     github_username = UnicodeAttribute(null=True)
-    gh_status = UnicodeAttribute(null=True)
     comms_status = UnicodeAttribute(null=True)
     gh_status = UnicodeAttribute(null=True)
+    six_week_comms = UnicodeAttribute(null=True)
+    two_week_comms = UnicodeAttribute(null=True)
+    next_week_comms = UnicodeAttribute(null=True)
+    close_comms = UnicodeAttribute(null=True)
 
     def can_transition_to(self, target_state):
         return target_state in REGISTRATION_STATES.get(self.status, [])
