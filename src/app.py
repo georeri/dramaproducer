@@ -141,10 +141,10 @@ class RegistrationModel(Model):
     github_username = UnicodeAttribute(null=True)
     comms_status = UnicodeAttribute(null=True)
     gh_status = UnicodeAttribute(null=True)
-    six_week_comms = UnicodeAttribute(null=True)
-    two_week_comms = UnicodeAttribute(null=True)
-    next_week_comms = UnicodeAttribute(null=True)
-    close_comms = UnicodeAttribute(null=True)
+    six_week_comms = BooleanAttribute(null=True)
+    two_week_comms = BooleanAttribute(null=True)
+    next_week_comms = BooleanAttribute(null=True)
+    close_comms = BooleanAttribute(null=True)
 
     def can_transition_to(self, target_state):
         return target_state in REGISTRATION_STATES.get(self.status, [])
