@@ -207,9 +207,6 @@ class RegistrationForm(FlaskForm):
     github_username = StringField(
         "GitHub username",
         description="Your public GitHub (non-Wells Fargo) username",
-        validators=[
-            validators.DataRequired(),
-        ],
     )
 
     def validate_github_username(form, field):
