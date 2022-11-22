@@ -227,7 +227,7 @@ class RegistrationForm(FlaskForm):
             )
         ):
             raise validators.ValidationError(
-                "Your email address has already registered for this event."
+                'Your email address has already registered for this event. Check your confirmation email to find the link to edit.'
             )
 
     def save(self):
@@ -309,6 +309,29 @@ class TeamForm(FlaskForm):
         )
         t.save()
         return t
+
+
+class SearchForm(FlaskForm):
+    event = SelectField(
+        "Please choose an event to find your registration",
+        description="Click the box above to choose an event",
+        validators=[validators.UUID()],
+    )
+
+    corp_email = EmailField(
+        "Corporate email",
+        description="Must be a valid @wellsfargo.com address",
+        validators=[
+            validators.DataRequired(),
+            validators.Regexp(r"^.*@wellsfargo.com$"),
+        ],
+    )
+
+    def save(self):
+        ri = RegistrationModel.scan((RegistrationModel.corp_email == self.corp_email.data) & (
+            RegistrationModel.event_uid == self.event.data) & (RegistrationModel.status != 'cancelled'))
+        r = next(ri, None)
+        return r
 
 
 #########################
@@ -479,6 +502,23 @@ def team_details(team_number):
 def team_list():
     teams = sorted(TeamModel.scan(), key=lambda x: x.team_number)
     return render_template("team_list.html", teams=teams)
+
+
+@app.route("/registration/none-found", methods=["GET"])
+def none_found():
+    return render_template('search_no_results.html')
+
+@app.route("/search/", methods=["GET", "POST"])
+def search_registration():
+    form = SearchForm()
+    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
+    if form.validate_on_submit():
+        r = form.save()
+        if r != None:
+            return redirect(f"/registration/{r.uid}")
+        else:
+            return redirect("/registration/none-found")
+    return render_template("search_registration.html", form=form)
 
 
 #########################
