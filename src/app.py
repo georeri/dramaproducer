@@ -17,6 +17,7 @@ from wtforms import (
     RadioField,
 )
 from wtforms import validators
+from wtforms.validators import Optional
 import pynamodb.constants
 from botocore.exceptions import ClientError
 from pynamodb.exceptions import UpdateError
@@ -251,6 +252,11 @@ class RegistrationForm(FlaskForm):
 
 
 class RegistrationEditForm(RegistrationForm):
+    event = SelectField(
+        "You cannot update event. Instead, return to the registraton view and cancel registration. Then, re-register for the new event.",
+        description="You cannot edit event. Instead, return to the registraton view and cancel registration. Then, re-register for the new event.",
+        validators=[Optional()]
+    )
     uid = StringField(
         "Registration ID",
         description="Unique system generated ID",
@@ -262,7 +268,6 @@ class RegistrationEditForm(RegistrationForm):
 
     def save(self):
         r = RegistrationModel.get(self.uid.data)
-        r.event_uid=self.event.data
         r.first_name=self.first_name.data
         r.last_name=self.last_name.data
         r.corp_email=self.corp_email.data

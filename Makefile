@@ -19,7 +19,7 @@ clean: clean-pyc
 prep: clean reqs
 
 deploy: prep
-	cd src && serverless deploy
+	cd src && serverless deploy --region us-east-1
 
 deploy-dev:
 	cd src && serverless deploy --region us-east-2 --stage dev

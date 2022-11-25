@@ -47,7 +47,7 @@ provider:
 functions:
   api:
     handler: wsgi_handler.handler
-    description: Level Up registration web-app & interactive API endpoints
+    description: Level Up web-app & interactive API endpoints
     events:
       - http: ANY /
       - http: ANY /{proxy+}
