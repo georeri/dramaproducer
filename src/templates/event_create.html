@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Level Up - Event Creation{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center py-2 mb-4">
+                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
+            </div>
+            <h1>Create Event</h1>
+            <hr>
+            <form method="post">
+                <fieldset>
+                    <div class="mb-3">
+                        {{ form.name.label(class_="form-label") }}
+                        {{ form.name(size=20, class_="form-control", placeholder="My special event") }}
+                        <div class="form-text ps-2">{{ form.name.description }}</div>
+                        {% if form.name.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.name.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class_="form-label") }}
+                        {{ form.description(size=20, class_="form-control", placeholder="All of the details of the event") }}
+                        <div class="form-text ps-2">{{ form.description.description }}</div>
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.description.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.location.label(class_="form-label") }}
+                        {{ form.location(size=20, class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.location.description }}</div>
+                        {% if form.location.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.location.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.num_seats.label(class_="form-label") }}
+                        {{ form.num_seats(size=20, class_="form-control", placeholder="Number of total seats") }}
+                        <div class="form-text ps-2">{{ form.num_seats.description }}</div>
+                        {% if form.num_seats.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.num_seats.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.start_date.label(class_="form-label") }}
+                        {{ form.start_date(size=20, class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.start_date.description }}</div>
+                        {% if form.start_date.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.start_date.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.end_date.label(class_="form-label") }}
+                        {{ form.end_date(size=20, class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.end_date.description }}</div>
+                        {% if form.end_date.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.end_date.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.local_time_zone.label(class_="form-label") }}
+                        {{ form.local_time_zone(size=20, class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.local_time_zone.description }}</div>
+                        {% if form.local_time_zone.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.local_time_zone.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.ics_file_location.label(class_="form-label") }}
+                        {{ form.ics_file_location(size=20, class_="form-control", placeholder="Path to ICS file") }}
+                        <div class="form-text ps-2">{{ form.ics_file_location.description }}</div>
+                        {% if form.ics_file_location.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.ics_file_location.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.status.label(class_="form-label") }}
+                        {{ form.status(class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.status.description }}</div>
+                        {% if form.status.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.status.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <hr>
+                <div class="d-grid gap-2 mt-4">
+                    {{ form.csrf_token }}
+                    <input type="submit" class="btn btn-lg btn-primary" value="Create">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

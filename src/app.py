@@ -15,6 +15,9 @@ from wtforms import (
     HiddenField,
     IntegerField,
     RadioField,
+    DateTimeLocalField,
+    TextAreaField,
+    HiddenField,
 )
 from wtforms import validators
 from wtforms.validators import Optional
@@ -120,6 +123,7 @@ class EventModel(Model):
     close_comms_sent = BooleanAttribute(default=False)
     gh_team = UnicodeAttribute(null=True)
 
+
 class StateTransitionError(Exception):
     pass
 
@@ -158,6 +162,7 @@ class RegistrationModel(Model):
                 f"Can't transition from {self.status} to {target_state}"
             )
 
+
 class TeamModel(Model):
     class Meta:
         table_name = "levelup-teams"
@@ -176,6 +181,78 @@ class TeamModel(Model):
 #########################
 # Form definitions
 #########################
+class EventForm(FlaskForm):
+    name = StringField("Event name", validators=[validators.DataRequired()])
+    description = TextAreaField("Description", validators=[validators.DataRequired()])
+    location = StringField(
+        "Location",
+        description="Please enter the street address",
+        validators=[validators.DataRequired()],
+    )
+    ics_file_location = StringField(
+        "iCal invite location", validators=[validators.DataRequired()]
+    )
+    num_seats = IntegerField(
+        "Number of seats",
+        validators=[validators.DataRequired(), validators.NumberRange(min=1, max=500)],
+    )
+    start_date = DateTimeLocalField(
+        "Start date & time",
+        format="%Y-%m-%dT%H:%M",
+        validators=[validators.DataRequired()],
+    )
+    end_date = DateTimeLocalField(
+        "End date & time",
+        format="%Y-%m-%dT%H:%M",
+        validators=[validators.DataRequired()],
+    )
+    local_time_zone = StringField(
+        "Local timezone", validators=[validators.DataRequired()]
+    )
+    status = SelectField(
+        "Status",
+        description="Please choose a status from the list",
+        validators=[validators.DataRequired()],
+    )
+
+    def save(self):
+        e = EventModel(
+            name=self.name.data,
+            description=self.description.data,
+            location=self.location.data,
+            ics_file_location=self.ics_file_location.data,
+            num_seats=self.num_seats.data,
+            start_date=self.start_date.data,
+            end_date=self.end_date.data,
+            local_time_zone=self.local_time_zone.data,
+            status=self.status.data,
+        )
+        e.save()
+        return e
+
+
+class EventUpdateForm(EventForm):
+    uid = HiddenField(
+        "Event ID",
+        description="Unique system generated ID for the event",
+        validators=[validators.UUID()],
+    )
+
+    def save(self):
+        e = EventModel.get(self.uid.data)
+        e.name = self.name.data
+        e.description = self.description.data
+        e.location = self.location.data
+        e.ics_file_location = self.ics_file_location.data
+        e.num_seats = self.num_seats.data
+        e.start_date = self.start_date.data
+        e.end_date = self.end_date.data
+        e.local_time_zone = self.local_time_zone.data
+        e.status = self.status.data
+        e.save()
+        return e
+
+
 class RegistrationForm(FlaskForm):
     event = SelectField(
         "Please choose an event",
@@ -228,7 +305,7 @@ class RegistrationForm(FlaskForm):
             )
         ):
             raise validators.ValidationError(
-                'Your email address has already registered for this event. Check your confirmation email to find the link to edit.'
+                "Your email address has already registered for this event. Check your confirmation email to find the link to edit."
             )
 
     def save(self):
@@ -253,9 +330,9 @@ class RegistrationForm(FlaskForm):
 
 class RegistrationEditForm(RegistrationForm):
     event = SelectField(
-        "You cannot update event. Instead, return to the registraton view and cancel registration. Then, re-register for the new event.",
-        description="You cannot edit event. Instead, return to the registraton view and cancel registration. Then, re-register for the new event.",
-        validators=[Optional()]
+        "You cannot update event. Instead, return to the registration view and cancel registration. Then, re-register for the new event.",
+        description="You cannot edit event. Instead, return to the registration view and cancel registration. Then, re-register for the new event.",
+        validators=[Optional()],
     )
     uid = StringField(
         "Registration ID",
@@ -268,13 +345,14 @@ class RegistrationEditForm(RegistrationForm):
 
     def save(self):
         r = RegistrationModel.get(self.uid.data)
-        r.first_name=self.first_name.data
-        r.last_name=self.last_name.data
-        r.corp_email=self.corp_email.data
-        r.corp_sid=self.corp_sid.data
-        r.personal_email=self.personal_email.data
-        r.github_username=self.github_username.data
+        r.first_name = self.first_name.data
+        r.last_name = self.last_name.data
+        r.corp_email = self.corp_email.data
+        r.corp_sid = self.corp_sid.data
+        r.personal_email = self.personal_email.data
+        r.github_username = self.github_username.data
         r.save()
+
 
 class CancellationForm(FlaskForm):
     registration = HiddenField(validators=[validators.UUID()])
@@ -333,8 +411,11 @@ class SearchForm(FlaskForm):
     )
 
     def save(self):
-        ri = RegistrationModel.scan((RegistrationModel.corp_email == self.corp_email.data) & (
-            RegistrationModel.event_uid == self.event.data) & (RegistrationModel.status != 'cancelled'))
+        ri = RegistrationModel.scan(
+            (RegistrationModel.corp_email == self.corp_email.data)
+            & (RegistrationModel.event_uid == self.event.data)
+            & (RegistrationModel.status != "cancelled")
+        )
         r = next(ri, None)
         return r
 
@@ -473,8 +554,39 @@ def edit_registration(registration_id):
     return render_template("registration_edit.html", form=form)
 
 
+@app.route("/admin/event/", methods=["GET", "POST"])
+def event_create():
+    form = EventForm()
+    form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
+    if form.validate_on_submit():
+        event = form.save()
+        return redirect(f"/event/{event.uid}")
+    return render_template(
+        "event_create.html",
+        form=form,
+    )
+
+
+@app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
+def event_edit(event_id):
+    event = EventModel().get(event_id)
+    form = EventUpdateForm(data=event.attribute_values)
+    form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
+    if form.validate_on_submit():
+        form.save()
+        return redirect(f"/event/{event_id}")
+    return render_template("event_edit.html", form=form)
+
+
+@app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
+def event_delete(event_id):
+    event = EventModel().get(event_id)
+    event.delete()
+    return redirect(f"/events/")
+
+
 @app.route("/event/<uuid:event_id>", methods=["GET"])
-def event_roster(event_id):
+def event_details(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
     return render_template(
@@ -511,7 +623,8 @@ def team_list():
 
 @app.route("/registration/none-found", methods=["GET"])
 def none_found():
-    return render_template('search_no_results.html')
+    return render_template("search_no_results.html")
+
 
 @app.route("/search/", methods=["GET", "POST"])
 def search_registration():
