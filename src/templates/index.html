@@ -11,9 +11,9 @@
             <hr>
             <form method="post">
                 <fieldset class="mb-4">
-                    <legend>Select an event:</legend>
+                    <legend>Select an event from the list below:</legend>
                     <div class="">
-                        {{ form.event(class_="form-control") }}
+                        {{ form.event(size=5, class_="form-control") }}
                         <div class="form-text ps-2">{{ form.event.description }}</div>
                         {% if form.event.errors %}
                             <div class="alert alert-danger" role="alert">

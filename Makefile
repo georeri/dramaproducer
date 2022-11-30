@@ -21,6 +21,9 @@ prep: clean reqs
 deploy: prep
 	cd src && serverless deploy --region us-east-1
 
+deploy-prod: prep
+	cd src && serverless deploy --region us-east-1 --stage prod
+
 deploy-dev:
 	cd src && serverless deploy --region us-east-2 --stage dev
 

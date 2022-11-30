@@ -257,7 +257,7 @@ class RegistrationForm(FlaskForm):
     event = SelectField(
         "Please choose an event",
         description="Click the box above to choose an event",
-        validators=[validators.UUID()],
+        validators=[validators.DataRequired(), validators.UUID()],
     )
     first_name = StringField("First name", validators=[validators.DataRequired()])
     last_name = StringField("Last name", validators=[validators.DataRequired()])
@@ -497,7 +497,7 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def create_registration():
-    form = RegistrationForm()
+    form = RegistrationForm(data=request.args)
     form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
         form.save()
@@ -567,25 +567,7 @@ def event_create():
     )
 
 
-@app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
-def event_edit(event_id):
-    event = EventModel().get(event_id)
-    form = EventUpdateForm(data=event.attribute_values)
-    form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
-    if form.validate_on_submit():
-        form.save()
-        return redirect(f"/event/{event_id}")
-    return render_template("event_edit.html", form=form)
-
-
-@app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
-def event_delete(event_id):
-    event = EventModel().get(event_id)
-    event.delete()
-    return redirect(f"/events/")
-
-
-@app.route("/event/<uuid:event_id>", methods=["GET"])
+@app.route("/admin/event/<uuid:event_id>", methods=["GET"])
 def event_details(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
@@ -594,10 +576,28 @@ def event_details(event_id):
     )
 
 
-@app.route("/events/", methods=["GET"])
+@app.route("/admin/events/", methods=["GET"])
 def event_list():
     events = EventModel.scan()
     return render_template("event_list.html", events=events)
+
+
+@app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
+def event_edit(event_id):
+    event = EventModel().get(event_id)
+    form = EventUpdateForm(data=event.attribute_values)
+    form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
+    if form.validate_on_submit():
+        form.save()
+        return redirect(f"/admin/event/{event_id}")
+    return render_template("event_edit.html", form=form)
+
+
+@app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
+def event_delete(event_id):
+    event = EventModel().get(event_id)
+    event.delete()
+    return redirect(f"/admin/events/")
 
 
 @app.route("/team", methods=["GET", "POST"])

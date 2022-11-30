@@ -12,7 +12,7 @@
                 <fieldset class="mb-4">
                     <legend>Registered event:</legend>
                     <div class="">
-                        {{ form.event(class_="form-control",disabled=True) }}
+                        {{ form.event(size=5, class_="form-control",disabled=True) }}
                         <div class="form-text ps-2">{{ form.event.description }}</div>
                         {% if form.event.errors %}
                             <div class="alert alert-danger" role="alert">
