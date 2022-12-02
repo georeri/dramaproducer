@@ -21,5 +21,10 @@ werkzeug = "==1.0.1"
 flask-wtf = "*"
 segno = "*"
 requests = "*"
+flask-awscognito = "*"
+python-dotenv = "*"
+flask-cors = "*"
+flask-jwt-extended = "*"
+cryptography = "*"
 
 [dev-packages]

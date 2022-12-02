@@ -1,41 +1,35 @@
-import os, io, uuid
-import requests
-from typing import Any
+import io
+import os
 from pathlib import Path
-from datetime import datetime
-from datetime import timezone
-from flask import Flask, jsonify, make_response, redirect, request
-from jinja2 import Environment, FileSystemLoader
-from flask_wtf.csrf import CSRFProtect
-from flask_wtf import FlaskForm
-from wtforms import (
-    StringField,
-    EmailField,
-    SelectField,
-    HiddenField,
-    IntegerField,
-    RadioField,
-    DateTimeLocalField,
-    TextAreaField,
-    HiddenField,
-)
-from wtforms import validators
-from wtforms.validators import Optional
-import pynamodb.constants
-from botocore.exceptions import ClientError
-from pynamodb.exceptions import UpdateError
-from pynamodb.models import Model
-from pynamodb.constants import STREAM_NEW_AND_OLD_IMAGE, PAY_PER_REQUEST_BILLING_MODE
-from pynamodb.attributes import (
-    UnicodeAttribute,
-    NumberAttribute,
-    UTCDateTimeAttribute,
-    BooleanAttribute,
-    MapAttribute,
-    Attribute,
-    ListAttribute,
-)
+
+import requests
 import segno
+from botocore.exceptions import ClientError
+from flask import Flask, jsonify, redirect, request, url_for, make_response
+from flask_wtf.csrf import CSRFProtect
+from jinja2 import Environment, FileSystemLoader
+from pynamodb.exceptions import UpdateError
+from flask_awscognito import AWSCognitoAuthentication
+from flask_cors import CORS
+from jwt.algorithms import RSAAlgorithm
+from flask_jwt_extended import (
+    JWTManager,
+    set_access_cookies,
+    verify_jwt_in_request,
+    get_jwt_identity,
+)
+from forms import (
+    CancellationForm,
+    EventForm,
+    EventUpdateForm,
+    RegistrationEditForm,
+    RegistrationForm,
+    SearchForm,
+    TeamForm,
+)
+from models import EventModel, RegistrationModel, TeamModel
+import constants as CONST
+from utils import get_cognito_public_keys
 
 #########################
 # CONSTANTS
@@ -47,378 +41,27 @@ ENV = Environment(
     loader=FileSystemLoader(TEMPLATE_ROOT_DIR),
     autoescape=True,
 )
-REGISTRATION_STATES = {
-    "registered": ["cancelled", "attended"],
-    "attended": ["cancelled"],
-    "cancelled": [],
-}
+
 
 #########################
 # Setup
 #########################
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "ARBITRARY")
-# csrf = CSRFProtect(app)
+app.secret_key = CONST.SECRET_KEY
+app.config["AWS_DEFAULT_REGION"] = CONST.AWS_DEFAULT_REGION
+app.config["AWS_COGNITO_DOMAIN"] = CONST.AWS_COGNITO_DOMAIN
+app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.AWS_COGNITO_USER_POOL_ID
+app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = CONST.AWS_COGNITO_USER_POOL_CLIENT_ID
+app.config[
+    "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
+] = CONST.AWS_COGNITO_USER_POOL_CLIENT_SECRET
+app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.AWS_COGNITO_REDIRECT_URL
 
-
-#########################
-# Custom table attributes
-#########################
-
-
-class UUIDAttribute(Attribute[uuid.UUID]):
-    """
-    PynamoDB attribute to for UUIDs. These are backed by DynamoDB unicode (`S`) types.
-    """
-
-    attr_type = pynamodb.constants.STRING
-
-    def __init__(self, remove_dashes: bool = False, **kwargs: Any) -> None:
-        """
-        Initializes a UUIDAttribute object.
-        :param remove_dashes: if set, the string serialization will be without dashes.
-        Defaults to False.
-        """
-        super().__init__(**kwargs)
-        self._remove_dashes = remove_dashes
-
-    def serialize(self, value: uuid.UUID) -> str:
-        result = str(value)
-
-        if self._remove_dashes:
-            result = result.replace("-", "")
-
-        return result
-
-    def deserialize(self, value: str) -> uuid.UUID:
-        return uuid.UUID(value)
-
-
-#########################
-# DynamoDB table models
-#########################
-
-
-class EventModel(Model):
-    class Meta:
-        table_name = "levelup-events"
-        region = os.environ.get("AWS_REGION", "us-east-1")
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
-        billing_mode = PAY_PER_REQUEST_BILLING_MODE
-
-    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
-    name = UnicodeAttribute()
-    description = UnicodeAttribute()
-    location = UnicodeAttribute()
-    ics_file_location = UnicodeAttribute()
-    num_seats = NumberAttribute()
-    start_date = UTCDateTimeAttribute()
-    end_date = UTCDateTimeAttribute()
-    local_time_zone = UnicodeAttribute()
-    status = UnicodeAttribute(default="open")
-    six_week_comms_sent = BooleanAttribute(default=False)
-    two_week_comms_sent = BooleanAttribute(default=False)
-    next_week_comms_sent = BooleanAttribute(default=False)
-    close_comms_sent = BooleanAttribute(default=False)
-    gh_team = UnicodeAttribute(null=True)
-
-
-class StateTransitionError(Exception):
-    pass
-
-
-class RegistrationModel(Model):
-    class Meta:
-        table_name = "levelup-registration"
-        region = os.environ.get("AWS_REGION", "us-east-1")
-        billing_mode = PAY_PER_REQUEST_BILLING_MODE
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
-
-    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
-    event_uid = UUIDAttribute()
-    status = UnicodeAttribute(default="registered")
-    first_name = UnicodeAttribute()
-    last_name = UnicodeAttribute()
-    corp_email = UnicodeAttribute()
-    corp_sid = UnicodeAttribute()
-    personal_email = UnicodeAttribute(null=True)
-    github_username = UnicodeAttribute(null=True)
-    comms_status = UnicodeAttribute(null=True)
-    gh_status = UnicodeAttribute(null=True)
-    six_week_comms = BooleanAttribute(null=True)
-    two_week_comms = BooleanAttribute(null=True)
-    next_week_comms = BooleanAttribute(null=True)
-    close_comms = BooleanAttribute(null=True)
-
-    def can_transition_to(self, target_state):
-        return target_state in REGISTRATION_STATES.get(self.status, [])
-
-    def transition_to(self, target_state):
-        if self.can_transition_to(target_state):
-            self.status = target_state
-        else:
-            raise StateTransitionError(
-                f"Can't transition from {self.status} to {target_state}"
-            )
-
-
-class TeamModel(Model):
-    class Meta:
-        table_name = "levelup-teams"
-        region = os.environ.get("AWS_REGION", "us-east-1")
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
-        billing_mode = PAY_PER_REQUEST_BILLING_MODE
-
-    team_number = NumberAttribute(hash_key=True)
-    name = UnicodeAttribute()
-    num_members = NumberAttribute()
-    tech_stack = UnicodeAttribute()
-    repo_url = UnicodeAttribute(null=True)
-    env_urls = ListAttribute(null=True)
-
-
-#########################
-# Form definitions
-#########################
-class EventForm(FlaskForm):
-    name = StringField("Event name", validators=[validators.DataRequired()])
-    description = TextAreaField("Description", validators=[validators.DataRequired()])
-    location = StringField(
-        "Location",
-        description="Please enter the street address",
-        validators=[validators.DataRequired()],
-    )
-    ics_file_location = StringField(
-        "iCal invite location", validators=[validators.DataRequired()]
-    )
-    num_seats = IntegerField(
-        "Number of seats",
-        validators=[validators.DataRequired(), validators.NumberRange(min=1, max=500)],
-    )
-    start_date = DateTimeLocalField(
-        "Start date & time",
-        format="%Y-%m-%dT%H:%M",
-        validators=[validators.DataRequired()],
-    )
-    end_date = DateTimeLocalField(
-        "End date & time",
-        format="%Y-%m-%dT%H:%M",
-        validators=[validators.DataRequired()],
-    )
-    local_time_zone = StringField(
-        "Local timezone", validators=[validators.DataRequired()]
-    )
-    status = SelectField(
-        "Status",
-        description="Please choose a status from the list",
-        validators=[validators.DataRequired()],
-    )
-
-    def save(self):
-        e = EventModel(
-            name=self.name.data,
-            description=self.description.data,
-            location=self.location.data,
-            ics_file_location=self.ics_file_location.data,
-            num_seats=self.num_seats.data,
-            start_date=self.start_date.data,
-            end_date=self.end_date.data,
-            local_time_zone=self.local_time_zone.data,
-            status=self.status.data,
-        )
-        e.save()
-        return e
-
-
-class EventUpdateForm(EventForm):
-    uid = HiddenField(
-        "Event ID",
-        description="Unique system generated ID for the event",
-        validators=[validators.UUID()],
-    )
-
-    def save(self):
-        e = EventModel.get(self.uid.data)
-        e.name = self.name.data
-        e.description = self.description.data
-        e.location = self.location.data
-        e.ics_file_location = self.ics_file_location.data
-        e.num_seats = self.num_seats.data
-        e.start_date = self.start_date.data
-        e.end_date = self.end_date.data
-        e.local_time_zone = self.local_time_zone.data
-        e.status = self.status.data
-        e.save()
-        return e
-
-
-class RegistrationForm(FlaskForm):
-    event = SelectField(
-        "Please choose an event",
-        description="Click the box above to choose an event",
-        validators=[validators.DataRequired(), validators.UUID()],
-    )
-    first_name = StringField("First name", validators=[validators.DataRequired()])
-    last_name = StringField("Last name", validators=[validators.DataRequired()])
-    corp_email = EmailField(
-        "Corporate email",
-        description="Must be a valid @wellsfargo.com address",
-        validators=[
-            validators.DataRequired(),
-            validators.Regexp(r"^.*@wellsfargo.com$"),
-        ],
-    )
-    corp_sid = StringField(
-        "Corporate SID",
-        description="Your enterprise login ID in the form of 'X000000'",
-        validators=[
-            validators.DataRequired(),
-            validators.Length(max=7),
-            validators.Regexp(r"^[a-zA-Z][0-9]{6}"),
-        ],
-    )
-    personal_email = EmailField(
-        "Personal email",
-        description="By providing this you consent to receiving communications",
-    )
-    github_username = StringField(
-        "GitHub username",
-        description="Your public GitHub (non-Wells Fargo) username",
-    )
-
-    def validate_github_username(form, field):
-        if "@" in field.data:
-            raise validators.ValidationError(
-                "Please enter your GitHub username, not an email address"
-            )
-
-    def validate_corp_email(form, field):
-        if len(
-            list(
-                RegistrationModel.scan(
-                    (RegistrationModel.corp_email == field.data)
-                    & (RegistrationModel.status != "cancelled")
-                    & (RegistrationModel.event_uid == form.event.data),
-                    attributes_to_get="corp_email",
-                )
-            )
-        ):
-            raise validators.ValidationError(
-                "Your email address has already registered for this event. Check your confirmation email to find the link to edit."
-            )
-
-    def save(self):
-        e = EventModel.get(self.event.data)
-        r = RegistrationModel(
-            event_uid=self.event.data,
-            first_name=self.first_name.data,
-            last_name=self.last_name.data,
-            corp_email=self.corp_email.data,
-            corp_sid=self.corp_sid.data,
-            personal_email=self.personal_email.data,
-            github_username=self.github_username.data,
-            status="attended"
-            if e.start_date
-            < datetime.utcnow().replace(tzinfo=timezone.utc)
-            < e.end_date
-            else "registered",
-        )
-        r.save()
-        return r
-
-
-class RegistrationEditForm(RegistrationForm):
-    event = SelectField(
-        "You cannot update event. Instead, return to the registration view and cancel registration. Then, re-register for the new event.",
-        description="You cannot edit event. Instead, return to the registration view and cancel registration. Then, re-register for the new event.",
-        validators=[Optional()],
-    )
-    uid = StringField(
-        "Registration ID",
-        description="Unique system generated ID",
-    )
-
-    def validate_corp_email(form, field):
-        # Override dup check for edits
-        pass
-
-    def save(self):
-        r = RegistrationModel.get(self.uid.data)
-        r.first_name = self.first_name.data
-        r.last_name = self.last_name.data
-        r.corp_email = self.corp_email.data
-        r.corp_sid = self.corp_sid.data
-        r.personal_email = self.personal_email.data
-        r.github_username = self.github_username.data
-        r.save()
-
-
-class CancellationForm(FlaskForm):
-    registration = HiddenField(validators=[validators.UUID()])
-
-
-class TeamForm(FlaskForm):
-    table_number = IntegerField(
-        "Table number",
-        description="Table number",
-        validators=[
-            validators.DataRequired(),
-            validators.NoneOf(sorted([t.team_number for t in TeamModel.scan()])),
-        ],
-    )
-    team_name = StringField(
-        "Team Name",
-        description="Name of your team",
-        validators=[validators.DataRequired()],
-    )
-    num_members = IntegerField(
-        "Number of members",
-        description="Total number of people on the team (4-7)",
-        validators=[validators.DataRequired(), validators.NumberRange(min=4, max=7)],
-    )
-    tech_stack = RadioField(
-        "Choose a tech stack",
-        validators=[validators.DataRequired()],
-        choices=[("dotnet", "C#"), ("java", "Java"), ("python", "Python")],
-    )
-
-    def save(self):
-        t = TeamModel(
-            team_number=self.table_number.data,
-            name=self.team_name.data,
-            num_members=self.num_members.data,
-            tech_stack=self.tech_stack.data,
-        )
-        t.save()
-        return t
-
-
-class SearchForm(FlaskForm):
-    event = SelectField(
-        "Please choose an event to find your registration",
-        description="Click the box above to choose an event",
-        validators=[validators.UUID()],
-    )
-
-    corp_email = EmailField(
-        "Corporate email",
-        description="Must be a valid @wellsfargo.com address",
-        validators=[
-            validators.DataRequired(),
-            validators.Regexp(r"^.*@wellsfargo.com$"),
-        ],
-    )
-
-    def save(self):
-        ri = RegistrationModel.scan(
-            (RegistrationModel.corp_email == self.corp_email.data)
-            & (RegistrationModel.event_uid == self.event.data)
-            & (RegistrationModel.status != "cancelled")
-        )
-        r = next(ri, None)
-        return r
-
+CORS(app)
+CSRFProtect(app)
+aws_auth = AWSCognitoAuthentication(app)
+jwt = JWTManager(app)
 
 #########################
 # Helper functions
@@ -430,17 +73,6 @@ def is_conditional_error(e):
         code = e.cause.response["Error"].get("Code")
         if code == "ConditionalCheckFailedException":
             return True
-
-
-def create_all_tables():
-    if not EventModel.exists():
-        EventModel.create_table(wait=True)
-
-    if not RegistrationModel.exists():
-        RegistrationModel.create_table(wait=True)
-
-    if not TeamModel.exists():
-        TeamModel.create_table(wait=True)
 
 
 def get_open_events():
@@ -462,9 +94,7 @@ def render_template(template_path, *args, **kwargs):
 
 
 def makeQR(value):
-    url = (
-        f"https://registration.levelup-program.com/registration/{str(value)}/check-in/"
-    )
+    url = f"https://app.levelup-program.com/registration/{str(value)}/check-in/"
     qrcode = segno.make(url)
     buff = io.BytesIO()
     qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
@@ -597,7 +227,7 @@ def event_edit(event_id):
 def event_delete(event_id):
     event = EventModel().get(event_id)
     event.delete()
-    return redirect(f"/admin/events/")
+    return redirect("/admin/events/")
 
 
 @app.route("/team", methods=["GET", "POST"])
@@ -632,7 +262,7 @@ def search_registration():
     form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
     if form.validate_on_submit():
         r = form.save()
-        if r != None:
+        if r is not None:
             return redirect(f"/registration/{r.uid}")
         else:
             return redirect("/registration/none-found")
@@ -642,6 +272,30 @@ def search_registration():
 #########################
 # Authentication routes
 #########################
+
+
+@app.route("/admin")
+@aws_auth.authentication_required
+def auth_test():
+    verify_jwt_in_request()
+    if get_jwt_identity():
+        claims = aws_auth.claims  # or g.cognito_claims
+        return jsonify({"claims": claims})
+    else:
+        return redirect(aws_auth.get_sign_in_url())
+
+
+@app.route("/login")
+def sign_in():
+    return redirect(aws_auth.get_sign_in_url())
+
+
+@app.route("/aws_cognito_redirect", methods=["GET"])
+def aws_cognito_redirect():
+    access_token = aws_auth.get_access_token(request.args)
+    response = make_response(redirect(url_for("auth_test")))
+    set_access_cookies(response, access_token, max_age=60 * 60)
+    return response
 
 
 @app.route("/oauth/github/access-token", methods=["POST"])

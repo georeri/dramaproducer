@@ -8,8 +8,25 @@
             </div>
             <div>
                 <h1>Registration Details</h1>
+                
                 <table class="table">
                     <tbody>
+                        <tr>
+                            <th>Event Name</th>
+                            <td>{{ event.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Location</th>
+                            <td>{{ event.location }}</td>
+                        </tr>
+                        <tr>
+                            <th>Starts</th>
+                            <td>{{ event.start_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ends</th>
+                            <td>{{ event.end_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                        </tr>
                         <tr>
                             <th>Registration #</th>
                             <td>{{ registration.uid }} (<span class="{% if registration.status is eq 'cancelled' %}text-danger{% else %}text-success{% endif %}">{{ registration.status }}</span>)
@@ -65,40 +82,6 @@
                     </div>
                 </form>
                 {% endif %}
-                <h2 class="mt-5">Event Information</h2>
-                <table class="table">
-                    <tbody>
-                        <tr>
-                            <th>Event Name</th>
-                            <td>{{ event.name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Status</th>
-                            <td>registration {{ event.status }} ({{ event.num_seats }} seats total)</td>
-                        </tr>
-                        <tr>
-                            <th>Starts</th>
-                            <td>{{ event.start_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Ends</th>
-                            <td>{{ event.end_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Local Timezone</th>
-                            <td>{{ event.local_time_zone }}</td>
-                        </tr>
-                        <tr>
-                            <th>Description</th>
-                            <td>{{ event.description|safe }}</td>
-                        </tr>
-                        <tr>
-                            <th>Location</th>
-                            <td>{{ event.location }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
             </div>
         </div>
     </div>

@@ -25,20 +25,6 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        {{ form.description.label(class_="form-label") }}
-                        {{ form.description(size=20, class_="form-control", placeholder="All of the details of the event") }}
-                        <div class="form-text ps-2">{{ form.description.description }}</div>
-                        {% if form.description.errors %}
-                            <div class="alert alert-danger" role="alert">
-                                <ul class="errors">
-                                {% for error in form.description.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
                         {{ form.location.label(class_="form-label") }}
                         {{ form.location(size=20, class_="form-control") }}
                         <div class="form-text ps-2">{{ form.location.description }}</div>
@@ -46,6 +32,20 @@
                             <div class="alert alert-danger" role="alert">
                                 <ul class="errors">
                                 {% for error in form.location.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class_="form-label") }}
+                        {{ form.description(size=20, class_="form-control", placeholder="All of the details of the event") }}
+                        <div class="form-text ps-2">{{ form.description.description }}</div>
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.description.errors %}
                                     <li>{{ error }}</li>
                                 {% endfor %}
                                 </ul>

@@ -18,17 +18,17 @@ clean: clean-pyc
 
 prep: clean reqs
 
-deploy: prep
-	cd src && serverless deploy --region us-east-1
-
 deploy-prod: prep
 	cd src && serverless deploy --region us-east-1 --stage prod
 
-deploy-dev:
+deploy-dev: prep
 	cd src && serverless deploy --region us-east-2 --stage dev
 
-un-deploy:
-	cd src && serverless remove
+remove-dev:
+	cd src && serverless remove --region us-east-2 --stage dev
+
+remove-prod:
+	cd src && serverless remove --region us-east-1 --stage prod
 
 package: prep
 	mkdir -p ./dist
@@ -38,7 +38,7 @@ serve:
 	cd src && serverless wsgi serve
 
 run:
-	FLASK_APP=src/app.py pipenv run flask run
+	FLASK_APP=src/app.py pipenv run flask run -h localhost -p 8000
 
 shell:
 	pipenv shell
