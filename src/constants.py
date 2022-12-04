@@ -9,7 +9,7 @@ REGISTRATION_STATES = {
     "attended": ["cancelled"],
     "cancelled": [],
 }
-SITE_URL = os.environ.get("SITE_URL", "http://localhost:5000")
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
 
 #########################
 # AWS

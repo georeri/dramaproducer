@@ -67,7 +67,7 @@ functions:
             authorizerId:
               Ref: ApiGatewayAuthorizer
           cors:
-            origin: 'http://localhost:5000'
+            origin: 'http://localhost:8000'
             headers:
               - Content-Type
               - X-Amz-Date
@@ -120,10 +120,10 @@ resources:
       Type: AWS::ApiGateway::Authorizer
       Properties:
         Name: ${self:custom.authorizerName}
+        Type: COGNITO_USER_POOLS
         IdentitySource: method.request.header.Authorization
         RestApiId:
           Ref: ApiGatewayRestApi
-        Type: COGNITO_USER_POOLS
         ProviderARNs:
           - !GetAtt CognitoUserPool.Arn
 

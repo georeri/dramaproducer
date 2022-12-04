@@ -1,23 +1,25 @@
 import io
-import os
 from pathlib import Path
 
-import requests
 import segno
 from botocore.exceptions import ClientError
-from flask import Flask, jsonify, redirect, request, url_for, make_response
-from flask_wtf.csrf import CSRFProtect
-from jinja2 import Environment, FileSystemLoader
-from pynamodb.exceptions import UpdateError
+from flask import Flask, jsonify, make_response, redirect, request, session, url_for
 from flask_awscognito import AWSCognitoAuthentication
 from flask_cors import CORS
-from jwt.algorithms import RSAAlgorithm
 from flask_jwt_extended import (
     JWTManager,
     set_access_cookies,
-    verify_jwt_in_request,
-    get_jwt_identity,
+    unset_access_cookies,
+    unset_jwt_cookies,
+    jwt_required,
 )
+
+# from flask_wtf.csrf import CSRFProtect
+from jinja2 import Environment, FileSystemLoader
+from jwt.algorithms import RSAAlgorithm
+from pynamodb.exceptions import UpdateError
+
+import constants as CONST
 from forms import (
     CancellationForm,
     EventForm,
@@ -28,7 +30,6 @@ from forms import (
     TeamForm,
 )
 from models import EventModel, RegistrationModel, TeamModel
-import constants as CONST
 from utils import get_cognito_public_keys
 
 #########################
@@ -49,6 +50,7 @@ ENV = Environment(
 
 app = Flask(__name__)
 app.secret_key = CONST.SECRET_KEY
+app.url_map.strict_slashes = False
 app.config["AWS_DEFAULT_REGION"] = CONST.AWS_DEFAULT_REGION
 app.config["AWS_COGNITO_DOMAIN"] = CONST.AWS_COGNITO_DOMAIN
 app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.AWS_COGNITO_USER_POOL_ID
@@ -57,9 +59,11 @@ app.config[
     "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
 ] = CONST.AWS_COGNITO_USER_POOL_CLIENT_SECRET
 app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.AWS_COGNITO_REDIRECT_URL
+app.config["JWT_TOKEN_LOCATION"] = CONST.JWT_TOKEN_LOCATION
+app.config["JWT_PUBLIC_KEY"] = RSAAlgorithm.from_jwk(get_cognito_public_keys())
 
 CORS(app)
-CSRFProtect(app)
+# CSRFProtect(app)
 aws_auth = AWSCognitoAuthentication(app)
 jwt = JWTManager(app)
 
@@ -94,7 +98,7 @@ def render_template(template_path, *args, **kwargs):
 
 
 def makeQR(value):
-    url = f"https://app.levelup-program.com/registration/{str(value)}/check-in/"
+    url = f"{CONST.SITE_URL}/registration/{str(value)}/check-in/"
     qrcode = segno.make(url)
     buff = io.BytesIO()
     qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
@@ -275,56 +279,33 @@ def search_registration():
 
 
 @app.route("/admin")
-@aws_auth.authentication_required
+@jwt_required()
 def auth_test():
-    verify_jwt_in_request()
-    if get_jwt_identity():
-        claims = aws_auth.claims  # or g.cognito_claims
-        return jsonify({"claims": claims})
-    else:
-        return redirect(aws_auth.get_sign_in_url())
+    return redirect("/")
+    # if get_jwt_identity():
+    #     claims = aws_auth.claims  # or g.cognito_claims
+    #     current_user = get_jwt_identity()
+    #     return jsonify({"claims": claims, "user": current_user})
+    # else:
+    #     return redirect(aws_auth.get_sign_in_url())
 
 
 @app.route("/login")
-def sign_in():
+def login():
     return redirect(aws_auth.get_sign_in_url())
+
+
+@app.route("/logout")
+def logout():
+    response = jsonify({"status": "logged out"})
+    unset_access_cookies(response)
+    unset_jwt_cookies(response)
+    return response
 
 
 @app.route("/aws_cognito_redirect", methods=["GET"])
 def aws_cognito_redirect():
     access_token = aws_auth.get_access_token(request.args)
-    response = make_response(redirect(url_for("auth_test")))
+    response = jsonify({"access_token": access_token})
     set_access_cookies(response, access_token, max_age=60 * 60)
     return response
-
-
-@app.route("/oauth/github/access-token", methods=["POST"])
-def get_access_token():
-    github_request = requests.post(
-        url="https://github.com/login/oauth/access_token",
-        headers={
-            "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-            "Accept": "application/json",
-        },
-        data=request.form.to_dict(),
-        allow_redirects=False,
-    )
-    response = github_request.json()
-
-    return jsonify(response)
-
-
-@app.route("/oauth/github/user-info", methods=["GET"])
-def get_user_info():
-    github_request = requests.get(
-        url="https://api.github.com/user",
-        headers={
-            "Authorization": "token "
-            + request.headers.get("Authorization").split("Bearer ")[1],
-            "Accept": "application/json",
-        },
-        allow_redirects=False,
-    )
-    response = github_request.json()
-
-    return jsonify({**response, "sub": response["id"]})
