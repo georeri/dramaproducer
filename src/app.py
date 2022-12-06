@@ -3,7 +3,7 @@ from pathlib import Path
 
 import segno
 from botocore.exceptions import ClientError
-from flask import Flask, jsonify, make_response, redirect, request, session, url_for
+from flask import Flask, jsonify, redirect, request, session
 from flask_awscognito import AWSCognitoAuthentication
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -11,12 +11,10 @@ from flask_jwt_extended import (
     set_access_cookies,
     unset_access_cookies,
     unset_jwt_cookies,
-    jwt_required,
 )
 
 # from flask_wtf.csrf import CSRFProtect
 from jinja2 import Environment, FileSystemLoader
-from jwt.algorithms import RSAAlgorithm
 from pynamodb.exceptions import UpdateError
 
 import constants as CONST
@@ -30,7 +28,8 @@ from forms import (
     TeamForm,
 )
 from models import EventModel, RegistrationModel, TeamModel
-from utils import get_cognito_public_keys
+from auth import CognitoAuthenticator
+from decorators import authentication_required
 
 #########################
 # CONSTANTS
@@ -59,8 +58,8 @@ app.config[
     "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
 ] = CONST.AWS_COGNITO_USER_POOL_CLIENT_SECRET
 app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.AWS_COGNITO_REDIRECT_URL
-app.config["JWT_TOKEN_LOCATION"] = CONST.JWT_TOKEN_LOCATION
-app.config["JWT_PUBLIC_KEY"] = RSAAlgorithm.from_jwk(get_cognito_public_keys())
+# app.config["JWT_TOKEN_LOCATION"] = CONST.JWT_TOKEN_LOCATION
+# app.config["JWT_PUBLIC_KEY"] = RSAAlgorithm.from_jwk(get_cognito_public_keys())
 
 CORS(app)
 # CSRFProtect(app)
@@ -112,6 +111,11 @@ ENV.filters["makeQR"] = makeQR
 #########################
 # Flask (API) routes
 #########################
+
+
+@app.errorhandler(401)
+def custom_401(error):
+    return render_template("401.html")
 
 
 @app.errorhandler(404)
@@ -189,6 +193,7 @@ def edit_registration(registration_id):
 
 
 @app.route("/admin/event/", methods=["GET", "POST"])
+@authentication_required
 def event_create():
     form = EventForm()
     form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
@@ -202,6 +207,7 @@ def event_create():
 
 
 @app.route("/admin/event/<uuid:event_id>", methods=["GET"])
+@authentication_required
 def event_details(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
@@ -211,12 +217,14 @@ def event_details(event_id):
 
 
 @app.route("/admin/events/", methods=["GET"])
+@authentication_required
 def event_list():
     events = EventModel.scan()
     return render_template("event_list.html", events=events)
 
 
 @app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
+@authentication_required
 def event_edit(event_id):
     event = EventModel().get(event_id)
     form = EventUpdateForm(data=event.attribute_values)
@@ -228,6 +236,7 @@ def event_edit(event_id):
 
 
 @app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
+@authentication_required
 def event_delete(event_id):
     event = EventModel().get(event_id)
     event.delete()
@@ -278,18 +287,6 @@ def search_registration():
 #########################
 
 
-@app.route("/admin")
-@jwt_required()
-def auth_test():
-    return redirect("/")
-    # if get_jwt_identity():
-    #     claims = aws_auth.claims  # or g.cognito_claims
-    #     current_user = get_jwt_identity()
-    #     return jsonify({"claims": claims, "user": current_user})
-    # else:
-    #     return redirect(aws_auth.get_sign_in_url())
-
-
 @app.route("/login")
 def login():
     return redirect(aws_auth.get_sign_in_url())
@@ -297,15 +294,19 @@ def login():
 
 @app.route("/logout")
 def logout():
-    response = jsonify({"status": "logged out"})
+    response = redirect("/loggedout")
     unset_access_cookies(response)
-    unset_jwt_cookies(response)
     return response
+
+
+@app.route("/loggedout")
+def logged_out():
+    return render_template("logout.html")
 
 
 @app.route("/aws_cognito_redirect", methods=["GET"])
 def aws_cognito_redirect():
     access_token = aws_auth.get_access_token(request.args)
-    response = jsonify({"access_token": access_token})
+    response = redirect("/")
     set_access_cookies(response, access_token, max_age=60 * 60)
     return response

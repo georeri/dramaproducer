@@ -169,3 +169,4 @@ cython_debug/
 .dccache
 .requirements
 .DS_Store
+env
