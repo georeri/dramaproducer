@@ -32,12 +32,13 @@ remove-dev:
 remove-prod:
 	cd src && serverless remove --region us-east-1 --stage prod
 
-package: prep
+package-dev: prep
 	mkdir -p ./dist
-	cd src && serverless package --region "us-east-2" --stage dev --package ../dist 
+	cd src && serverless package --region us-east-2 --stage dev --package ../dist
 
-serve:
-	cd src && serverless wsgi serve
+package-prod: prep
+	mkdir -p ./dist
+	cd src && serverless package --region us-east-2 --stage prod --package ../dist
 
 run:
 	FLASK_APP=src/app.py pipenv run flask run -h localhost -p 8000
