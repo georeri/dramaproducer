@@ -1,3 +1,4 @@
+import sys
 import json
 import logging
 import time
@@ -7,6 +8,8 @@ from dataclasses import dataclass
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 import constants as CONST
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 @dataclass
@@ -49,8 +52,8 @@ class Token:
 class CognitoAuthenticator:
 
     pool_region: str = CONST.AWS_DEFAULT_REGION
-    pool_id: str = CONST.AWS_COGNITO_USER_POOL_ID
-    client_id: str = CONST.AWS_COGNITO_USER_POOL_CLIENT_ID
+    pool_id: str = CONST.COGNITO_USER_POOL_ID
+    client_id: str = CONST.COGNITO_USER_POOL_CLIENT_ID
     token: Token = Token()
 
     def __init__(self, token: str) -> None:
@@ -71,9 +74,12 @@ class CognitoAuthenticator:
         Raises:
             Exception when JWKS endpoint does not contain any keys
         """
-
-        file = urllib.request.urlopen(f"{self.issuer}/.well-known/jwks.json")
+        url = f"{self.issuer}/.well-known/jwks.json"
+        # url = "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_8JFWtzsXp/.well-known/jwks.json"
+        logging.info(url)
+        file = urllib.request.urlopen(url)
         res = json.loads(file.read().decode("utf-8"))
+        logging.info(res)
         if not res.get("keys"):
             raise Exception("The JWKS endpoint does not contain any keys")
         jwks = [JWK(**key) for key in res["keys"]]

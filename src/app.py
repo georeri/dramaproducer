@@ -1,4 +1,6 @@
 import io
+import logging
+import sys
 from pathlib import Path
 
 import segno
@@ -47,19 +49,19 @@ ENV = Environment(
 # Setup
 #########################
 
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 app = Flask(__name__)
 app.secret_key = CONST.SECRET_KEY
 app.url_map.strict_slashes = False
 app.config["AWS_DEFAULT_REGION"] = CONST.AWS_DEFAULT_REGION
-app.config["AWS_COGNITO_DOMAIN"] = CONST.AWS_COGNITO_DOMAIN
-app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.AWS_COGNITO_USER_POOL_ID
-app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = CONST.AWS_COGNITO_USER_POOL_CLIENT_ID
+app.config["AWS_COGNITO_DOMAIN"] = CONST.COGNITO_DOMAIN
+app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.COGNITO_USER_POOL_ID
+app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = CONST.COGNITO_USER_POOL_CLIENT_ID
 app.config[
     "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
-] = CONST.AWS_COGNITO_USER_POOL_CLIENT_SECRET
-app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.AWS_COGNITO_REDIRECT_URL
-# app.config["JWT_TOKEN_LOCATION"] = CONST.JWT_TOKEN_LOCATION
-# app.config["JWT_PUBLIC_KEY"] = RSAAlgorithm.from_jwk(get_cognito_public_keys())
+] = CONST.COGNITO_USER_POOL_CLIENT_SECRET
+app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.COGNITO_REDIRECT_URL
 
 CORS(app)
 # CSRFProtect(app)

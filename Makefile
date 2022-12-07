@@ -2,6 +2,8 @@ bootstrap:
 	npm install -g serverless
 	cd src && sls plugin install -n serverless-wsgi
 	cd src && sls plugin install -n serverless-python-requirements
+	- pipenv --rm
+	pipenv update
 
 reqs:
 	pipenv requirements > src/requirements.txt
@@ -32,7 +34,7 @@ remove-prod:
 
 package: prep
 	mkdir -p ./dist
-	cd src && serverless package --package ../dist
+	cd src && serverless package --region "us-east-2" --stage dev --package ../dist 
 
 serve:
 	cd src && serverless wsgi serve

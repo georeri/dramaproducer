@@ -8,7 +8,7 @@ plugins:
 
 provider:
   name: aws
-  region: ${opt:region, 'us-east-1'}
+  region: ${opt:region, 'us-east-2'}
   stage: ${self:custom.currentStage}
   deploymentMethod: direct
   runtime: python3.9
@@ -57,25 +57,36 @@ functions:
   api:
     handler: wsgi_handler.handler
     description: Level Up web-app & interactive API endpoints
+    environment:
+      FLASK_ENV: development
+      GITHUB_TOKEN: ${ssm:/GITHUB_TOKEN}
+      SITE_URL: ${ssm:/SITE_URL}
+      COGNITO_DOMAIN: ${ssm:/COGNITO_DOMAIN}
+      COGNITO_USER_POOL_ID: ${ssm:/COGNITO_USER_POOL_ID}
+      COGNITO_USER_POOL_CLIENT_ID: ${ssm:/COGNITO_USER_POOL_CLIENT_ID}
+      COGNITO_USER_POOL_CLIENT_SECRET: ${ssm:/COGNITO_USER_POOL_CLIENT_SECRET}
+      JWT_PRIVATE_KEY: ${ssm:/JWT_PRIVATE_KEY}
+      JWT_SECRET_KEY: ${ssm:/JWT_SECRET_KEY}
+      LOGLEVEL: INFO
     # Not sure if event order matters, but I err'd on the side of caution and assumed first match wins
     events:
-      - http:
-          path: /admin/{proxy+}
-          method: ANY
-          authorizer:
-            type: COGNITO_USER_POOLS
-            authorizerId:
-              Ref: ApiGatewayAuthorizer
-          cors:
-            origin: 'http://localhost:8000'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
+      # - http:
+      #     path: /admin/{proxy+}
+      #     method: ANY
+      #     authorizer:
+      #       type: COGNITO_USER_POOLS
+      #       authorizerId:
+      #         Ref: ApiGatewayAuthorizer
+      #     cors:
+      #       origin: 'http://localhost:8000'
+      #       headers:
+      #         - Content-Type
+      #         - X-Amz-Date
+      #         - Authorization
+      #         - X-Api-Key
+      #         - X-Amz-Security-Token
+      #         - X-Amz-User-Agent
+      #       allowCredentials: true
       - http: ANY /
       - http: ANY /{proxy+}
 
@@ -116,16 +127,16 @@ resources:
           - openid
         SupportedIdentityProviders:
           - COGNITO
-    ApiGatewayAuthorizer:
-      Type: AWS::ApiGateway::Authorizer
-      Properties:
-        Name: ${self:custom.authorizerName}
-        Type: COGNITO_USER_POOLS
-        IdentitySource: method.request.header.Authorization
-        RestApiId:
-          Ref: ApiGatewayRestApi
-        ProviderARNs:
-          - !GetAtt CognitoUserPool.Arn
+    # ApiGatewayAuthorizer:
+    #   Type: AWS::ApiGateway::Authorizer
+    #   Properties:
+    #     Name: ${self:custom.authorizerName}
+    #     Type: COGNITO_USER_POOLS
+    #     IdentitySource: method.request.header.Authorization
+    #     RestApiId:
+    #       Ref: ApiGatewayRestApi
+    #     ProviderARNs:
+    #       - !GetAtt CognitoUserPool.Arn
 
 package:
   patterns:
