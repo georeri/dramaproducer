@@ -170,3 +170,5 @@ cython_debug/
 .requirements
 .DS_Store
 env
+.env
+.gitignore

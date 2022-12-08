@@ -7,7 +7,9 @@ Front end application - Documentation is a work in progress. Please, add more!
 - Install VSCode
 - Install python 3.8 or greater
 - Install node 
-- Run ' make bootstrap '
+- Run ' make bootstrap ' to install and update dependencies
+- Get necessary values for .env from a team member
+- Before development, run ' make shell ' to get the pipenv running with env vars
 
 ## Contents
 
