@@ -1,5 +1,6 @@
 import os
 import uuid
+from dateutil import tz
 from typing import Any
 from pynamodb.models import Model
 from pynamodb.constants import (
@@ -15,7 +16,7 @@ from pynamodb.attributes import (
     Attribute,
     ListAttribute,
 )
-from constants import REGISTRATION_STATES
+from constants import REGISTRATION_STATES, AWS_DEFAULT_REGION
 
 
 #########################
@@ -59,7 +60,7 @@ class UUIDAttribute(Attribute[uuid.UUID]):
 class EventModel(Model):
     class Meta:
         table_name = "levelup-events"
-        region = os.environ.get("AWS_REGION", "us-east-1")
+        region = AWS_DEFAULT_REGION
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
@@ -71,13 +72,23 @@ class EventModel(Model):
     num_seats = NumberAttribute()
     start_date = UTCDateTimeAttribute()
     end_date = UTCDateTimeAttribute()
-    local_time_zone = UnicodeAttribute()
+    local_time_zone = UnicodeAttribute(default="America/New_York")
     status = UnicodeAttribute(default="open")
     six_week_comms_sent = BooleanAttribute(default=False)
     two_week_comms_sent = BooleanAttribute(default=False)
     next_week_comms_sent = BooleanAttribute(default=False)
     close_comms_sent = BooleanAttribute(default=False)
     gh_team = UnicodeAttribute(null=True)
+
+    @property
+    def local_start_date(self):
+        local_tz = tz.gettz(self.local_time_zone)
+        return self.start_date.astimezone(local_tz)
+
+    @property
+    def local_end_date(self):
+        local_tz = tz.gettz(self.local_time_zone)
+        return self.end_date.astimezone(local_tz)
 
 
 class StateTransitionError(Exception):
@@ -87,7 +98,7 @@ class StateTransitionError(Exception):
 class RegistrationModel(Model):
     class Meta:
         table_name = "levelup-registration"
-        region = os.environ.get("AWS_REGION", "us-east-1")
+        region = AWS_DEFAULT_REGION
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
 
@@ -122,7 +133,7 @@ class RegistrationModel(Model):
 class TeamModel(Model):
     class Meta:
         table_name = "levelup-teams"
-        region = os.environ.get("AWS_REGION", "us-east-1")
+        region = AWS_DEFAULT_REGION
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 

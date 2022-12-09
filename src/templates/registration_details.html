@@ -21,11 +21,11 @@
                         </tr>
                         <tr>
                             <th>Starts</th>
-                            <td>{{ event.start_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                            <td>{{ event.local_start_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
                         </tr>
                         <tr>
                             <th>Ends</th>
-                            <td>{{ event.end_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
+                            <td>{{ event.local_end_date.strftime('%A, %B %d, %Y at %I:%M %p (%Z)') }}</td>
                         </tr>
                         <tr>
                             <th>Registration #</th>

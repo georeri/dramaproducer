@@ -75,7 +75,6 @@ class CognitoAuthenticator:
             Exception when JWKS endpoint does not contain any keys
         """
         url = f"{self.issuer}/.well-known/jwks.json"
-        # url = "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_8JFWtzsXp/.well-known/jwks.json"
         logging.info(url)
         file = urllib.request.urlopen(url)
         res = json.loads(file.read().decode("utf-8"))
@@ -106,6 +105,15 @@ class CognitoAuthenticator:
         except CognitoError:
             return False
         return True
+
+    def is_group_member(self, group: str):
+        if (
+            "cognito:groups" not in self.token.claims
+            or self.token.claims["cognito:groups"] is None
+        ):
+            return False
+
+        return group in self.token.claims["cognito:groups"]
 
     def _is_jwt(self, token: str) -> bool:
         """Validate a JSON Web Token (JWT).
@@ -207,6 +215,10 @@ class CognitoAuthenticator:
 
 
 class CognitoError(Exception):
+    pass
+
+
+class CognitoAuthError(Exception):
     pass
 
 

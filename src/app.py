@@ -5,21 +5,17 @@ from pathlib import Path
 
 import segno
 from botocore.exceptions import ClientError
-from flask import Flask, jsonify, redirect, request, session
+from flask import Flask, redirect, request
 from flask_awscognito import AWSCognitoAuthentication
 from flask_cors import CORS
-from flask_jwt_extended import (
-    JWTManager,
-    set_access_cookies,
-    unset_access_cookies,
-    unset_jwt_cookies,
-)
+from flask_jwt_extended import JWTManager, set_access_cookies, unset_access_cookies
 
 # from flask_wtf.csrf import CSRFProtect
 from jinja2 import Environment, FileSystemLoader
 from pynamodb.exceptions import UpdateError
 
 import constants as CONST
+from decorators import authentication_required, admin_required
 from forms import (
     CancellationForm,
     EventForm,
@@ -30,8 +26,6 @@ from forms import (
     TeamForm,
 )
 from models import EventModel, RegistrationModel, TeamModel
-from auth import CognitoAuthenticator
-from decorators import authentication_required
 
 #########################
 # CONSTANTS
@@ -195,13 +189,13 @@ def edit_registration(registration_id):
 
 
 @app.route("/admin/event/", methods=["GET", "POST"])
-@authentication_required
+@admin_required
 def event_create():
     form = EventForm()
     form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
     if form.validate_on_submit():
         event = form.save()
-        return redirect(f"/event/{event.uid}")
+        return redirect(f"/admin/event/{event.uid}")
     return render_template(
         "event_create.html",
         form=form,
@@ -209,7 +203,7 @@ def event_create():
 
 
 @app.route("/admin/event/<uuid:event_id>", methods=["GET"])
-@authentication_required
+@admin_required
 def event_details(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
@@ -219,14 +213,14 @@ def event_details(event_id):
 
 
 @app.route("/admin/events/", methods=["GET"])
-@authentication_required
+@admin_required
 def event_list():
     events = EventModel.scan()
     return render_template("event_list.html", events=events)
 
 
 @app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
-@authentication_required
+@admin_required
 def event_edit(event_id):
     event = EventModel().get(event_id)
     form = EventUpdateForm(data=event.attribute_values)
@@ -238,7 +232,7 @@ def event_edit(event_id):
 
 
 @app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
-@authentication_required
+@admin_required
 def event_delete(event_id):
     event = EventModel().get(event_id)
     event.delete()

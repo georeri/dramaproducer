@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-
+from dateutil import tz
 from flask_wtf import FlaskForm
 from wtforms import (
     DateTimeLocalField,
@@ -47,13 +47,20 @@ class EventForm(FlaskForm):
         validators=[validators.DataRequired()],
     )
     local_time_zone = StringField(
-        "Local timezone", validators=[validators.DataRequired()]
+        "Local timezone",
+        validators=[validators.DataRequired()],
+        description="Must be standard Timezone database value: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+        default="America/New_York",
     )
     status = SelectField(
         "Status",
         description="Please choose a status from the list",
         validators=[validators.DataRequired()],
     )
+
+    def validate_local_time_zone(form, field):
+        if tz.gettz(field.data) is None:
+            raise validators.ValidationError("Invalid Timezone.")
 
     def save(self):
         e = EventModel(

@@ -15,10 +15,11 @@
                                 <th>&nbsp;</th>
                                 <th>Name</th>
                                 <th>Location</th>
+                                <th>Dates</th>
                             </tr>
                         </thead>
                         <tbody class="table-group-divider">
-                            {% for event in events %}
+                            {% for event in events|sort(attribute="start_date") %}
                                 <tr>
                                     <td>
                                         {% if event.status.lower() == 'open' %}
@@ -31,6 +32,7 @@
                                     </td>
                                     <td><a href="/admin/event/{{ event.uid }}">{{ event.name }}</a></td>
                                     <td>{{ event.location }}</td>
+                                    <td>{{ event.local_start_date.strftime('%B %d') }} - {{ event.local_end_date.strftime('%B %d, %Y') }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
