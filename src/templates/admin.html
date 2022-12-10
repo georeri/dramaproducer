@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Level Up Administration{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center py-2 mb-4">
+                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" height="118" alt="Level Up"/>
+            </div>
+            <hr>
+            <div class="d-grid gap-2 mt-4">
+                <a href="/admin/event/" class="btn btn-lg btn-danger">Create Event</a>
+                <a href="/admin/events/" class="btn btn-lg btn-danger">View Events</a>
+                <a href="/team/" class="btn btn-lg btn-warning">Create Team</a></li>
+                <a href="/teams/" class="btn btn-lg btn-warning">View Teams</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -61,6 +61,7 @@ CORS(app)
 # CSRFProtect(app)
 aws_auth = AWSCognitoAuthentication(app)
 jwt = JWTManager(app)
+app.create_jinja_environment()
 
 #########################
 # Helper functions
@@ -89,7 +90,7 @@ def get_event_registrations(event):
 
 
 def render_template(template_path, *args, **kwargs):
-    return ENV.get_template(template_path).render(*args, **kwargs)
+    return ENV.get_template(template_path).render(*args, **kwargs, request=request)
 
 
 def makeQR(value):
@@ -126,7 +127,7 @@ def server_error(e):
 
 @app.route("/", methods=["GET"])
 def home():
-    return redirect("/register")
+    return render_template("index.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -136,7 +137,7 @@ def create_registration():
     if form.validate_on_submit():
         form.save()
         return render_template("registration_success.html")
-    return render_template("index.html", form=form)
+    return render_template("registration_create.html", form=form)
 
 
 @app.route("/registration/<uuid:registration_id>/", methods=["GET"])
@@ -186,6 +187,12 @@ def edit_registration(registration_id):
         form.save()
         return redirect(f"/registration/{registration_id}")
     return render_template("registration_edit.html", form=form)
+
+
+@app.route("/admin/", methods=["GET"])
+@admin_required
+def admin_home():
+    return render_template("admin.html")
 
 
 @app.route("/admin/event/", methods=["GET", "POST"])
