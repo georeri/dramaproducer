@@ -8,7 +8,9 @@
             </div>
             <hr>
             <div class="d-grid gap-2 mt-4">
+                {% if request.cookies.access_token_cookie is not defined %}
                 <a href="/login" class="btn btn-lg btn-danger"><i class="fa-solid fa-key"></i>&nbsp; Login or Sign-up</a>
+                {% endif %}
                 <a href="/register/" class="btn btn-lg btn-warning"><i class="fa-solid fa-clipboard-list"></i>&nbsp; Register for an event</a>
             </div>
         </div>

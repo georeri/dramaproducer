@@ -109,6 +109,11 @@
 
             <div class="navbar-collapse offcanvas-collapse" id="navbarsExampleDefault">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% if request.cookies.access_token_cookie is defined %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/"><i class="fa-solid fa-gear"></i>&nbsp; Administration</a>
+                    </li>
+                    {% endif %}
                     <!-- <li class="nav-item">
                         <a class="nav-link" href="/profile/">My Profile</a>
                     </li>

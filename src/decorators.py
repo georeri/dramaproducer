@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import request, abort
+from flask import request, abort, make_response
 from auth import CognitoAuthenticator
 from typing import List
 
@@ -11,7 +11,6 @@ def authentication_required(view):
         authenticator = CognitoAuthenticator(access_token)
         if not authenticator.token.is_verified:
             abort(401)
-        view.__globals__["authenticator"] = authenticator
         return view(*args, **kwargs)
 
     return decorated
@@ -26,8 +25,13 @@ def group_membership_required(allowed_groups: List[str]):
                 [authenticator.is_group_member(i) for i in allowed_groups]
             ):
                 abort(401)
-            view.__globals__["authenticator"] = authenticator
-            return view(*args, **kwargs)
+            resp = make_response(view(*args, **kwargs))
+            resp.set_cookie("cognito_username", authenticator.token.claims["username"])
+            resp.set_cookie(
+                "cognito_groups",
+                ",".join(authenticator.token.claims.get("cognito:groups", [])),
+            )
+            return resp
 
         return wrapped
 
@@ -45,8 +49,13 @@ def admin_required(view):
                 authenticator.is_group_member("admins"),
             ]
         ):
-            view.__globals__["authenticator"] = authenticator
-            return view(*args, **kwargs)
+            resp = make_response(view(*args, **kwargs))
+            resp.set_cookie("cognito_username", authenticator.token.claims["username"])
+            resp.set_cookie(
+                "cognito_groups",
+                ",".join(authenticator.token.claims.get("cognito:groups", [])),
+            )
+            return resp
         abort(401)
 
     return decorated
