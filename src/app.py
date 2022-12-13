@@ -80,6 +80,11 @@ def get_open_events():
     return sorted(events, key=lambda e: e.start_date)
 
 
+def get_notdone_events():
+    events = [e for e in EventModel.scan() if e.status != "done"]
+    return sorted(events, key=lambda e: e.start_date)
+
+
 def get_event_registrations(event):
     registrations = [
         r
@@ -275,7 +280,7 @@ def none_found():
 @app.route("/search/", methods=["GET", "POST"])
 def search_registration():
     form = SearchForm()
-    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
+    form.event.choices = [(str(e.uid), e.name) for e in get_notdone_events()]
     if form.validate_on_submit():
         r = form.save()
         if r is not None:
