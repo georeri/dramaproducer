@@ -172,3 +172,5 @@ cython_debug/
 env
 .env
 .gitignore
+*.pub
+*.key

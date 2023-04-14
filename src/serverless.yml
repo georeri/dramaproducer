@@ -1,4 +1,4 @@
-service: aws-serverless-registration-app
+service: aws-audition-registration-app
 
 frameworkVersion: '3'
 
@@ -8,9 +8,10 @@ plugins:
 
 provider:
   name: aws
-  region: ${opt:region, 'us-east-2'}
+  region: 'us-east-1'
   stage: ${self:custom.currentStage}
   deploymentMethod: direct
+  profile: theater
   runtime: python3.9
   httpApi:
     cors: true
@@ -28,8 +29,8 @@ provider:
             - dynamodb:DeleteItem
             - dynamodb:DescribeTable
           Resource:
-            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/levelup*
-            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/levelup*/index/*
+            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/theater*
+            - arn:aws:dynamodb:${self:provider.region}:345218099459:table/theater*/index/*
   environment:
     # https://www.serverless.com/blog/aws-secrets-management/
     SECRET_KEY: ${ssm:/FLASK_SECRET_KEY}
@@ -37,9 +38,9 @@ provider:
 custom:
   defaultStage: dev
   currentStage: ${opt:stage, self:custom.defaultStage}
-  userPoolName: levelup-user-pool-${self:custom.currentStage}
-  userPoolClientName: levelup-user-pool-client-${self:custom.currentStage}
-  authorizerName: levelup-app-authorizer-${self:custom.currentStage}
+  userPoolName: theater-user-pool-${self:custom.currentStage}
+  userPoolClientName: theater-user-pool-client-${self:custom.currentStage}
+  authorizerName: theater-app-authorizer-${self:custom.currentStage}
   wsgi:
     app: app.app
   pythonRequirements:
@@ -56,15 +57,14 @@ custom:
 functions:
   api:
     handler: wsgi_handler.handler
-    description: Level Up web-app & interactive API endpoints
+    description: Theater Auditions web-app & interactive API endpoints
     environment:
       FLASK_ENV: development
-      GITHUB_TOKEN: ${ssm:/GITHUB_TOKEN}
       SITE_URL: ${ssm:/SITE_URL}
-      COGNITO_DOMAIN: ${ssm:/COGNITO_DOMAIN}
-      COGNITO_USER_POOL_ID: ${ssm:/COGNITO_USER_POOL_ID}
-      COGNITO_USER_POOL_CLIENT_ID: ${ssm:/COGNITO_USER_POOL_CLIENT_ID}
-      COGNITO_USER_POOL_CLIENT_SECRET: ${ssm:/COGNITO_USER_POOL_CLIENT_SECRET}
+      # COGNITO_DOMAIN: ${ssm:/COGNITO_DOMAIN}
+      # COGNITO_USER_POOL_ID: ${ssm:/COGNITO_USER_POOL_ID}
+      # COGNITO_USER_POOL_CLIENT_ID: ${ssm:/COGNITO_USER_POOL_CLIENT_ID}
+      # COGNITO_USER_POOL_CLIENT_SECRET: ${ssm:/COGNITO_USER_POOL_CLIENT_SECRET}
       JWT_PRIVATE_KEY: ${ssm:/JWT_PRIVATE_KEY}
       JWT_SECRET_KEY: ${ssm:/JWT_SECRET_KEY}
       LOGLEVEL: INFO
@@ -101,8 +101,8 @@ resources:
           - code
         CallbackURLs:
           - 'http://localhost:8000/aws_cognito_redirect'
-          - 'https://app-dev.levelup-program.com/aws_cognito_redirect'
-          - 'https://app.levelup-program.com/aws_cognito_redirect'
+          - 'https://dramaproducer/aws_cognito_redirect'
+          - 'https://dramaproducer/aws_cognito_redirect'
         AllowedOAuthFlowsUserPoolClient: true
         AllowedOAuthScopes:
           - email

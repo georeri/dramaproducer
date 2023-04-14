@@ -15,12 +15,12 @@ SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
 # AWS
 #########################
 
-AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
-COGNITO_DOMAIN = os.environ["COGNITO_DOMAIN"]
-COGNITO_USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
-COGNITO_USER_POOL_CLIENT_ID = os.environ["COGNITO_USER_POOL_CLIENT_ID"]
-COGNITO_USER_POOL_CLIENT_SECRET = os.environ["COGNITO_USER_POOL_CLIENT_SECRET"]
-COGNITO_REDIRECT_URL = SITE_URL + "/aws_cognito_redirect"
+AWS_DEFAULT_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+# COGNITO_DOMAIN = os.environ["COGNITO_DOMAIN"]
+# COGNITO_USER_POOL_ID = os.environ["COGNITO_USER_POOL_ID"]
+# COGNITO_USER_POOL_CLIENT_ID = os.environ["COGNITO_USER_POOL_CLIENT_ID"]
+# COGNITO_USER_POOL_CLIENT_SECRET = os.environ["COGNITO_USER_POOL_CLIENT_SECRET"]
+# COGNITO_REDIRECT_URL = SITE_URL + "/aws_cognito_redirect"
 
 #########################
 # Security

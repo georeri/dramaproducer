@@ -18,6 +18,8 @@ from pynamodb.attributes import (
 )
 from constants import REGISTRATION_STATES, AWS_DEFAULT_REGION
 
+DYNAMODB_ENDPOINT = os.environ.get("DYNAMODB_ENDPOINT")
+
 
 #########################
 # Custom table attributes
@@ -63,6 +65,8 @@ class EventModel(Model):
         region = AWS_DEFAULT_REGION
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
+        if DYNAMODB_ENDPOINT:
+            host = DYNAMODB_ENDPOINT
 
     uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
     name = UnicodeAttribute()
@@ -80,6 +84,9 @@ class EventModel(Model):
     close_comms_sent = BooleanAttribute(default=False)
     gh_team = UnicodeAttribute(null=True)
 
+    def __str__(self):
+        return str(self.uid)
+
     @property
     def local_start_date(self):
         local_tz = tz.gettz(self.local_time_zone)
@@ -89,6 +96,34 @@ class EventModel(Model):
     def local_end_date(self):
         local_tz = tz.gettz(self.local_time_zone)
         return self.end_date.astimezone(local_tz)
+
+    @property
+    def registrations(self):
+        return [r for r in RegistrationModel.scan() if r.event_uid == self.uid]
+
+    @property
+    def active_registrations(self):
+        return [r for r in self.registrations if r.status != "cancelled"]
+
+    @property
+    def attendees(self):
+        return [r for r in self.registrations if r.status == "attended"]
+
+    @property
+    def no_shows(self):
+        return [r for r in self.registrations if r.status == "registered"]
+
+    @property
+    def cancelled(self):
+        return [r for r in self.registrations if r.status == "cancelled"]
+
+    @property
+    def attendee_count(self):
+        return len([r for r in self.registrations if r.status == "attended"])
+
+    @property
+    def teams(self):
+        return [t for t in TeamModel.scan() if t.event_uid == self.uid]
 
 
 class StateTransitionError(Exception):
@@ -101,6 +136,8 @@ class RegistrationModel(Model):
         region = AWS_DEFAULT_REGION
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
+        if DYNAMODB_ENDPOINT:
+            host = DYNAMODB_ENDPOINT
 
     uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
     event_uid = UUIDAttribute()
@@ -117,6 +154,8 @@ class RegistrationModel(Model):
     two_week_comms = BooleanAttribute(null=True)
     next_week_comms = BooleanAttribute(null=True)
     close_comms = BooleanAttribute(null=True)
+    registration_timestamp = UTCDateTimeAttribute(null=True)
+    cancellation_timestamp = UTCDateTimeAttribute(null=True)
 
     def can_transition_to(self, target_state):
         return target_state in REGISTRATION_STATES.get(self.status, [])
@@ -126,8 +165,7 @@ class RegistrationModel(Model):
             self.status = target_state
         else:
             raise StateTransitionError(
-                f"Can't transition from {self.status} to {target_state}"
-            )
+                f"Can't transition from {self.status} to {target_state}")
 
 
 class TeamModel(Model):
@@ -136,13 +174,20 @@ class TeamModel(Model):
         region = AWS_DEFAULT_REGION
         stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
+        if DYNAMODB_ENDPOINT:
+            host = DYNAMODB_ENDPOINT
 
+    event_uid = UUIDAttribute(range_key=True)
     team_number = NumberAttribute(hash_key=True)
     name = UnicodeAttribute()
     num_members = NumberAttribute()
     tech_stack = UnicodeAttribute()
     repo_url = UnicodeAttribute(null=True)
     env_urls = ListAttribute(null=True)
+
+    @property
+    def repo_name(self):
+        return self.repo_url.replace("https://github.com/level-up-program/", "").strip("/")
 
 
 def create_all_tables():
@@ -154,3 +199,7 @@ def create_all_tables():
 
     if not TeamModel.exists():
         TeamModel.create_table(wait=True)
+
+
+if __name__ == "__main__":
+    create_all_tables()

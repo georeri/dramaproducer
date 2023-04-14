@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "aws-serverless-registration-app"
+name = "aws-auditions-registration-app"
 version = "0.1.0"
 description = ""
-authors = ["JP White <jpwhite3@gmail.com>"]
+authors = ["Erin Perry <perrytech2@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]

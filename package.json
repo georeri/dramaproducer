@@ -1,12 +1,12 @@
 {
-  "name": "aws-serverless-registration-app",
+  "name": "aws-auditions-registration-app",
   "version": "1.0.0",
   "description": "Example of a Python Flask API service backed by DynamoDB with traditional Serverless Framework",
   "author": "",
   "devDependencies": {
     "serverless-functions-base-path": "^1.0.32",
     "serverless-python-requirements": "^6.0.0",
-    "serverless-wsgi": "^3.0.1"
+    "serverless-wsgi": "^3.0.2"
   },
   "dependencies": {
     "serverless": "^3.25.1"

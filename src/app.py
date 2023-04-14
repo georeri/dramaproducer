@@ -15,7 +15,7 @@ from jinja2 import Environment, FileSystemLoader
 from pynamodb.exceptions import UpdateError
 
 import constants as CONST
-from decorators import authentication_required, admin_required
+# from decorators import authentication_required, admin_required
 from forms import (
     CancellationForm,
     EventForm,
@@ -49,17 +49,17 @@ app = Flask(__name__)
 app.secret_key = CONST.SECRET_KEY
 app.url_map.strict_slashes = False
 app.config["AWS_DEFAULT_REGION"] = CONST.AWS_DEFAULT_REGION
-app.config["AWS_COGNITO_DOMAIN"] = CONST.COGNITO_DOMAIN
-app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.COGNITO_USER_POOL_ID
-app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = CONST.COGNITO_USER_POOL_CLIENT_ID
-app.config[
-    "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
-] = CONST.COGNITO_USER_POOL_CLIENT_SECRET
-app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.COGNITO_REDIRECT_URL
+# app.config["AWS_COGNITO_DOMAIN"] = CONST.COGNITO_DOMAIN
+# app.config["AWS_COGNITO_USER_POOL_ID"] = CONST.COGNITO_USER_POOL_ID
+# app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = CONST.COGNITO_USER_POOL_CLIENT_ID
+# app.config[
+#     "AWS_COGNITO_USER_POOL_CLIENT_SECRET"
+# ] = CONST.COGNITO_USER_POOL_CLIENT_SECRET
+# app.config["AWS_COGNITO_REDIRECT_URL"] = CONST.COGNITO_REDIRECT_URL
 
 CORS(app)
 # CSRFProtect(app)
-aws_auth = AWSCognitoAuthentication(app)
+# aws_auth = AWSCognitoAuthentication(app)
 jwt = JWTManager(app)
 app.create_jinja_environment()
 
@@ -195,13 +195,13 @@ def edit_registration(registration_id):
 
 
 @app.route("/admin/", methods=["GET"])
-@admin_required
+# @admin_required
 def admin_home():
     return render_template("admin.html")
 
 
 @app.route("/admin/event/", methods=["GET", "POST"])
-@admin_required
+# @admin_required
 def event_create():
     form = EventForm()
     form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
@@ -215,7 +215,7 @@ def event_create():
 
 
 @app.route("/admin/event/<uuid:event_id>", methods=["GET"])
-@admin_required
+# @admin_required
 def event_details(event_id):
     event = EventModel.get(event_id)
     registrations = get_event_registrations(event)
@@ -225,14 +225,14 @@ def event_details(event_id):
 
 
 @app.route("/admin/events/", methods=["GET"])
-@admin_required
+# @admin_required
 def event_list():
     events = EventModel.scan()
     return render_template("event_list.html", events=events)
 
 
 @app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
-@admin_required
+# @admin_required
 def event_edit(event_id):
     event = EventModel().get(event_id)
     form = EventUpdateForm(data=event.attribute_values)
@@ -244,7 +244,7 @@ def event_edit(event_id):
 
 
 @app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
-@admin_required
+# @admin_required
 def event_delete(event_id):
     event = EventModel().get(event_id)
     event.delete()
@@ -295,26 +295,26 @@ def search_registration():
 #########################
 
 
-@app.route("/login")
-def login():
-    return redirect(aws_auth.get_sign_in_url())
+# @app.route("/login")
+# def login():
+#     return redirect(aws_auth.get_sign_in_url())
 
 
-@app.route("/logout")
-def logout():
-    response = redirect("/loggedout")
-    unset_access_cookies(response)
-    return response
+# @app.route("/logout")
+# def logout():
+#     response = redirect("/loggedout")
+#     unset_access_cookies(response)
+#     return response
 
 
-@app.route("/loggedout")
-def logged_out():
-    return render_template("logout.html")
+# @app.route("/loggedout")
+# def logged_out():
+#     return render_template("logout.html")
 
 
-@app.route("/aws_cognito_redirect", methods=["GET"])
-def aws_cognito_redirect():
-    access_token = aws_auth.get_access_token(request.args)
-    response = redirect("/")
-    set_access_cookies(response, access_token, max_age=60 * 60)
-    return response
+# @app.route("/aws_cognito_redirect", methods=["GET"])
+# def aws_cognito_redirect():
+#     access_token = aws_auth.get_access_token(request.args)
+#     response = redirect("/")
+#     set_access_cookies(response, access_token, max_age=60 * 60)
+#     return response

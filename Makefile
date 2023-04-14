@@ -24,7 +24,7 @@ deploy-prod: prep
 	cd src && serverless deploy --region us-east-1 --stage prod
 
 deploy-dev: prep
-	cd src && serverless deploy --region us-east-2 --stage dev
+	cd src && serverless deploy --region us-east-2 --stage dev --aws-profile theater
 
 remove-dev:
 	cd src && serverless remove --region us-east-2 --stage dev
