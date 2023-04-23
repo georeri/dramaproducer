@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Production Details{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-9">
+            <div class="text-center py-2 mb-3">
+                <i class="fa-solid fa-masks-theater fa-2xl me-2" style="color: #00c0c3;"></i>
+                <h1 class="fs-3 my-3">{{ production.name }}</h1>
+            </div>
+            
+            <div>
+                <h2 class="fs-4 section-head">Production Information</h2>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Production Name</th>
+                            <td>{{ production.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>{{ production.status.upper() }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ production.description|safe }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

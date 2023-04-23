@@ -1,32 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Level Up - Event List{% endblock %}
+{% block title %}Production List{% endblock %}
 {% block body %}
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
             <div class="text-center py-2 mb-3">
-                <img src="https://s3.amazonaws.com/levelup-program.com/images/level-up-header-logo.png" width="100%" alt="Level Up"/>
-                <h1 class="mt-2">Events</h1>
+                <i class="fa-solid fa-masks-theater fa-2xl me-2" style="color: #00c0c3;"></i>
+                <h1 class="mt-2">Productions</h1>
             </div>
             <div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <tbody class="table-group-divider">
-                            {% for event in events|sort(attribute="start_date") %}
+                            {% for production in productions|sort(attribute="name") %}
                                 <tr>
                                     <td>
-                                        {% if event.status.lower() == 'open' %}
+                                        {% if production.status.lower() == 'open' %}
                                             <i class="fa-solid fa-lock-open"></i>
-                                        {% elif event.status.lower() == 'closed' %}
+                                        {% elif production.status.lower() == 'closed' %}
                                             <i class="fa-solid fa-lock"></i>
                                         {% else %}
-                                            {{ event.status.upper() }}
+                                            {{ production.status.upper() }}
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div style="position:relative;">
-                                            <a class="stretched-link" href="/admin/event/{{ event.uid }}">{{ event.name }}</a><br>
-                                            {{ event.local_start_date.strftime('%B %d') }} - {{ event.local_end_date.strftime('%B %d, %Y') }}<br>
-                                            {{ event.location }}
+                                            <a class="stretched-link" href="/admin/production/{{ production.uid }}">{{ production.name }}</a><br>
                                         </div>
                                     </td>
                                 </tr>

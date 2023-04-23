@@ -17,15 +17,9 @@ from pynamodb.exceptions import UpdateError
 import constants as CONST
 # from decorators import authentication_required, admin_required
 from forms import (
-    CancellationForm,
-    EventForm,
-    EventUpdateForm,
-    RegistrationEditForm,
-    RegistrationForm,
-    SearchForm,
-    TeamForm,
+    ProductionForm, ProductionUpdateForm
 )
-from models import EventModel, RegistrationModel, TeamModel
+from models import ProductionModel
 
 #########################
 # CONSTANTS
@@ -74,41 +68,12 @@ def is_conditional_error(e):
         if code == "ConditionalCheckFailedException":
             return True
 
-
-def get_open_events():
-    events = [e for e in EventModel.scan() if e.status == "open"]
-    return sorted(events, key=lambda e: e.start_date)
-
-
-def get_notdone_events():
-    events = [e for e in EventModel.scan() if e.status != "done"]
-    return sorted(events, key=lambda e: e.start_date)
-
-
-def get_event_registrations(event):
-    registrations = [
-        r
-        for r in RegistrationModel.scan()
-        if r.event_uid == event.uid and r.status != "cancelled"
-    ]
-    return sorted(registrations, key=lambda r: r.last_name)
-
+def get_open_productions():
+    productions = [e for e in ProductionModel.scan() if e.status == "open"]
+    return sorted(productions, key=lambda e: e.start_date)
 
 def render_template(template_path, *args, **kwargs):
     return ENV.get_template(template_path).render(*args, **kwargs, request=request)
-
-
-def makeQR(value):
-    url = f"{CONST.SITE_URL}/registration/{str(value)}/check-in/"
-    qrcode = segno.make(url)
-    buff = io.BytesIO()
-    qrcode.save(buff, kind="svg", xmldecl=False, scale=2)
-    byte_str = buff.getvalue()
-    text_obj = byte_str.decode("UTF-8")
-    return text_obj
-
-
-ENV.filters["makeQR"] = makeQR
 
 #########################
 # Flask (API) routes
@@ -135,159 +100,60 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/register", methods=["GET", "POST"])
-def create_registration():
-    form = RegistrationForm(data=request.args)
-    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
-    if form.validate_on_submit():
-        form.save()
-        return render_template("registration_success.html")
-    return render_template("registration_create.html", form=form)
-
-
-@app.route("/registration/<uuid:registration_id>/", methods=["GET"])
-def view_registration(registration_id):
-    registration = RegistrationModel.get(registration_id)
-    event = EventModel.get(registration.event_uid)
-    form = CancellationForm(registration=registration.uid)
-    return render_template(
-        "registration_details.html",
-        registration=registration,
-        event=event,
-        form=form,
-    )
-
-
-@app.route("/registration/<uuid:registration_id>", methods=["POST"])
-def cancel_registration(registration_id):
-    registration = RegistrationModel.get(registration_id)
-    registration.update(actions=[RegistrationModel.status.set("cancelled")])
-    return render_template("registration_cancelled.html")
-
-
-@app.route("/registration/<uuid:registration_id>/check-in/", methods=["GET"])
-def event_checkin(registration_id):
-    registration = RegistrationModel.get(registration_id)
-    try:
-        registration.update(
-            actions=[RegistrationModel.status.set("attended")],
-            condition=(RegistrationModel.status != "cancelled")
-            & (RegistrationModel.status != "attended"),
-        )
-        result = (
-            f"Thanks {registration.first_name.capitalize()}, you are all checked-in!"
-        )
-    except UpdateError as e:
-        if is_conditional_error(e):
-            result = f"Sorry {registration.first_name.capitalize()}, you can't check-in because this registration is marked as <i>'{registration.status}'</i>"
-    return render_template("checkin.html", result=result)
-
-
-@app.route("/registration/<uuid:registration_id>/edit/", methods=["GET", "POST"])
-def edit_registration(registration_id):
-    registration = RegistrationModel.get(registration_id)
-    form = RegistrationEditForm(data=registration.attribute_values)
-    form.event.choices = [(str(e.uid), e.name) for e in get_open_events()]
-    if form.validate_on_submit():
-        form.save()
-        return redirect(f"/registration/{registration_id}")
-    return render_template("registration_edit.html", form=form)
-
-
 @app.route("/admin/", methods=["GET"])
 # @admin_required
 def admin_home():
     return render_template("admin.html")
 
 
-@app.route("/admin/event/", methods=["GET", "POST"])
+@app.route("/admin/production/", methods=["GET", "POST"])
 # @admin_required
-def event_create():
-    form = EventForm()
+def production_create():
+    form = ProductionForm()
     form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
     if form.validate_on_submit():
-        event = form.save()
-        return redirect(f"/admin/event/{event.uid}")
+        production = form.save()
+        return redirect(f"/admin/production/{production.uid}")
     return render_template(
-        "event_create.html",
+        "production_create.html",
         form=form,
     )
 
 
-@app.route("/admin/event/<uuid:event_id>", methods=["GET"])
+@app.route("/admin/production/<uuid:production_id>", methods=["GET"])
 # @admin_required
-def event_details(event_id):
-    event = EventModel.get(event_id)
-    registrations = get_event_registrations(event)
+def production_details(production_id):
+    production = ProductionModel.get(production_id)
     return render_template(
-        "event_details.html", registrations=registrations, event=event
+        "production_details.html", production=production
     )
 
 
-@app.route("/admin/events/", methods=["GET"])
+@app.route("/admin/productions/", methods=["GET"])
 # @admin_required
-def event_list():
-    events = EventModel.scan()
-    return render_template("event_list.html", events=events)
+def production_list():
+    productions = ProductionModel.scan()
+    return render_template("production_list.html", productions=productions)
 
 
-@app.route("/admin/event/<uuid:event_id>/edit/", methods=["GET", "POST"])
+@app.route("/admin/production/<uuid:production_id>/edit/", methods=["GET", "POST"])
 # @admin_required
-def event_edit(event_id):
-    event = EventModel().get(event_id)
-    form = EventUpdateForm(data=event.attribute_values)
+def production_edit(production_id):
+    production = ProductionModel().get(production_id)
+    form = ProductionUpdateForm(data=production.attribute_values)
     form.status.choices = [(i, i) for i in ["open", "closed", "done"]]
     if form.validate_on_submit():
         form.save()
-        return redirect(f"/admin/event/{event_id}")
-    return render_template("event_edit.html", form=form)
+        return redirect(f"/admin/production/{production_id}")
+    return render_template("production_edit.html", form=form)
 
 
-@app.route("/admin/event/<uuid:event_id>/delete/", methods=["POST"])
+@app.route("/admin/production/<uuid:production_id>/delete/", methods=["POST"])
 # @admin_required
-def event_delete(event_id):
-    event = EventModel().get(event_id)
-    event.delete()
-    return redirect("/admin/events/")
-
-
-@app.route("/team", methods=["GET", "POST"])
-def team_create():
-    form = TeamForm()
-    if form.validate_on_submit():
-        t = form.save()
-        return redirect(f"/team/{t.team_number}")
-    return render_template("team_registration.html", form=form)
-
-
-@app.route("/team/<int:team_number>", methods=["GET"])
-def team_details(team_number):
-    team = TeamModel.get(team_number)
-    return render_template("team_details.html", team=team)
-
-
-@app.route("/teams/", methods=["GET"])
-def team_list():
-    teams = sorted(TeamModel.scan(), key=lambda x: x.team_number)
-    return render_template("team_list.html", teams=teams)
-
-
-@app.route("/registration/none-found", methods=["GET"])
-def none_found():
-    return render_template("search_no_results.html")
-
-
-@app.route("/search/", methods=["GET", "POST"])
-def search_registration():
-    form = SearchForm()
-    form.event.choices = [(str(e.uid), e.name) for e in get_notdone_events()]
-    if form.validate_on_submit():
-        r = form.save()
-        if r is not None:
-            return redirect(f"/registration/{r.uid}")
-        else:
-            return redirect("/registration/none-found")
-    return render_template("search_registration.html", form=form)
+def production_delete(production_id):
+    production = ProductionModel().get(production_id)
+    production.delete()
+    return redirect("/admin/productions/")
 
 
 #########################

@@ -16,7 +16,7 @@ from pynamodb.attributes import (
     Attribute,
     ListAttribute,
 )
-from constants import REGISTRATION_STATES, AWS_DEFAULT_REGION
+from constants import AWS_DEFAULT_REGION
 
 DYNAMODB_ENDPOINT = os.environ.get("DYNAMODB_ENDPOINT")
 
@@ -59,11 +59,10 @@ class UUIDAttribute(Attribute[uuid.UUID]):
 #########################
 
 
-class EventModel(Model):
+class ProductionModel(Model):
     class Meta:
-        table_name = "levelup-events"
+        table_name = "dp-production"
         region = AWS_DEFAULT_REGION
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
         if DYNAMODB_ENDPOINT:
             host = DYNAMODB_ENDPOINT
@@ -71,135 +70,14 @@ class EventModel(Model):
     uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
     name = UnicodeAttribute()
     description = UnicodeAttribute()
-    location = UnicodeAttribute()
-    ics_file_location = UnicodeAttribute()
-    num_seats = NumberAttribute()
-    start_date = UTCDateTimeAttribute()
-    end_date = UTCDateTimeAttribute()
-    local_time_zone = UnicodeAttribute(default="America/New_York")
     status = UnicodeAttribute(default="open")
-    six_week_comms_sent = BooleanAttribute(default=False)
-    two_week_comms_sent = BooleanAttribute(default=False)
-    next_week_comms_sent = BooleanAttribute(default=False)
-    close_comms_sent = BooleanAttribute(default=False)
-    gh_team = UnicodeAttribute(null=True)
-
+    
     def __str__(self):
         return str(self.uid)
 
-    @property
-    def local_start_date(self):
-        local_tz = tz.gettz(self.local_time_zone)
-        return self.start_date.astimezone(local_tz)
-
-    @property
-    def local_end_date(self):
-        local_tz = tz.gettz(self.local_time_zone)
-        return self.end_date.astimezone(local_tz)
-
-    @property
-    def registrations(self):
-        return [r for r in RegistrationModel.scan() if r.event_uid == self.uid]
-
-    @property
-    def active_registrations(self):
-        return [r for r in self.registrations if r.status != "cancelled"]
-
-    @property
-    def attendees(self):
-        return [r for r in self.registrations if r.status == "attended"]
-
-    @property
-    def no_shows(self):
-        return [r for r in self.registrations if r.status == "registered"]
-
-    @property
-    def cancelled(self):
-        return [r for r in self.registrations if r.status == "cancelled"]
-
-    @property
-    def attendee_count(self):
-        return len([r for r in self.registrations if r.status == "attended"])
-
-    @property
-    def teams(self):
-        return [t for t in TeamModel.scan() if t.event_uid == self.uid]
-
-
-class StateTransitionError(Exception):
-    pass
-
-
-class RegistrationModel(Model):
-    class Meta:
-        table_name = "levelup-registration"
-        region = AWS_DEFAULT_REGION
-        billing_mode = PAY_PER_REQUEST_BILLING_MODE
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
-        if DYNAMODB_ENDPOINT:
-            host = DYNAMODB_ENDPOINT
-
-    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
-    event_uid = UUIDAttribute()
-    status = UnicodeAttribute(default="registered")
-    first_name = UnicodeAttribute()
-    last_name = UnicodeAttribute()
-    corp_email = UnicodeAttribute()
-    corp_sid = UnicodeAttribute()
-    personal_email = UnicodeAttribute(null=True)
-    github_username = UnicodeAttribute(null=True)
-    comms_status = UnicodeAttribute(null=True)
-    gh_status = UnicodeAttribute(null=True)
-    six_week_comms = BooleanAttribute(null=True)
-    two_week_comms = BooleanAttribute(null=True)
-    next_week_comms = BooleanAttribute(null=True)
-    close_comms = BooleanAttribute(null=True)
-    registration_timestamp = UTCDateTimeAttribute(null=True)
-    cancellation_timestamp = UTCDateTimeAttribute(null=True)
-
-    def can_transition_to(self, target_state):
-        return target_state in REGISTRATION_STATES.get(self.status, [])
-
-    def transition_to(self, target_state):
-        if self.can_transition_to(target_state):
-            self.status = target_state
-        else:
-            raise StateTransitionError(
-                f"Can't transition from {self.status} to {target_state}")
-
-
-class TeamModel(Model):
-    class Meta:
-        table_name = "levelup-teams"
-        region = AWS_DEFAULT_REGION
-        stream_view_type = STREAM_NEW_AND_OLD_IMAGE
-        billing_mode = PAY_PER_REQUEST_BILLING_MODE
-        if DYNAMODB_ENDPOINT:
-            host = DYNAMODB_ENDPOINT
-
-    event_uid = UUIDAttribute(range_key=True)
-    team_number = NumberAttribute(hash_key=True)
-    name = UnicodeAttribute()
-    num_members = NumberAttribute()
-    tech_stack = UnicodeAttribute()
-    repo_url = UnicodeAttribute(null=True)
-    env_urls = ListAttribute(null=True)
-
-    @property
-    def repo_name(self):
-        return self.repo_url.replace("https://github.com/level-up-program/", "").strip("/")
-
-
 def create_all_tables():
-    if not EventModel.exists():
-        EventModel.create_table(wait=True)
-
-    if not RegistrationModel.exists():
-        RegistrationModel.create_table(wait=True)
-
-    if not TeamModel.exists():
-        TeamModel.create_table(wait=True)
-
+    if not ProductionModel.exists():
+        ProductionModel.create_table(wait=True)
 
 if __name__ == "__main__":
     create_all_tables()

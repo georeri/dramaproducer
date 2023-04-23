@@ -4,6 +4,7 @@ bootstrap:
 	cd src && sls plugin install -n serverless-python-requirements
 	- pipenv --rm
 	pipenv update
+	export AWS_DEFAULT_PROFILE=theater
 
 reqs:
 	pipenv requirements > src/requirements.txt
@@ -21,20 +22,20 @@ clean: clean-pyc
 prep: clean reqs
 
 deploy-prod: prep
-	cd src && serverless deploy --region us-east-1 --stage prod
+	cd src && serverless deploy --region us-east-1 --stage prod --aws-profile theater
 
 deploy-dev: prep
 	cd src && serverless deploy --region us-east-2 --stage dev --aws-profile theater
 
 remove-dev:
-	cd src && serverless remove --region us-east-2 --stage dev
+	cd src && serverless remove --region us-east-2 --stage dev --aws-profile theater
 
 remove-prod:
-	cd src && serverless remove --region us-east-1 --stage prod
+	cd src && serverless remove --region us-east-1 --stage prod --aws-profile theater
 
 package-dev: prep
 	mkdir -p ./dist
-	cd src && serverless package --region us-east-2 --stage dev --package ../dist
+	cd src && serverless package --region us-east-2 --stage dev --package ../dist 
 
 package-prod: prep
 	mkdir -p ./dist

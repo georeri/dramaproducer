@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Production Creation{% endblock %}
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="text-center py-2 mb-4">
+                <i class="fa-solid fa-masks-theater fa-2xl me-2" style="color: #00c0c3;"></i>
+            </div>
+            <h1>Create Production</h1>
+            <hr>
+            <form method="post">
+                <fieldset>
+                    <div class="mb-3">
+                        {{ form.name.label(class_="form-label") }}
+                        {{ form.name(size=20, class_="form-control", placeholder="My special production") }}
+                        <div class="form-text ps-2">{{ form.name.description }}</div>
+                        {% if form.name.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.name.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class_="form-label") }}
+                        {{ form.description(size=20, class_="form-control", placeholder="A short synoposis of the production") }}
+                        <div class="form-text ps-2">{{ form.description.description }}</div>
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.description.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.status.label(class_="form-label") }}
+                        {{ form.status(class_="form-control") }}
+                        <div class="form-text ps-2">{{ form.status.description }}</div>
+                        {% if form.status.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <ul class="errors">
+                                {% for error in form.status.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+                <hr>
+                <div class="d-grid gap-2 mt-4">
+                    {{ form.csrf_token }}
+                    <input type="submit" class="btn btn-lg btn-primary" value="Create">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
