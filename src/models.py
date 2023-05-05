@@ -17,7 +17,7 @@ from pynamodb.attributes import (
     ListAttribute,
 )
 from constants import AWS_DEFAULT_REGION
-
+# AWS_DEFAULT_REGION = 'us-east-1'
 DYNAMODB_ENDPOINT = os.environ.get("DYNAMODB_ENDPOINT")
 
 
@@ -74,10 +74,35 @@ class ProductionModel(Model):
     
     def __str__(self):
         return str(self.uid)
+    
+class AuditionModel(Model):
+    class Meta:
+        table_name = "dp-audition"
+        region = AWS_DEFAULT_REGION
+        billing_mode = PAY_PER_REQUEST_BILLING_MODE
+        if DYNAMODB_ENDPOINT:
+            host = DYNAMODB_ENDPOINT
+
+    uid = UUIDAttribute(hash_key=True, default_for_new=uuid.uuid4)
+    name = UnicodeAttribute()
+    production_uid = UUIDAttribute()
+    email = UnicodeAttribute()
+    phone_number = UnicodeAttribute()
+    parent_email = UnicodeAttribute()
+    parent_phone_number = UnicodeAttribute()
+    age = NumberAttribute()
+    vocal_range = UnicodeAttribute()
+    resume = UnicodeAttribute()
+    status = UnicodeAttribute(default="new")
+    
+    def __str__(self):
+        return str(self.uid)
 
 def create_all_tables():
     if not ProductionModel.exists():
         ProductionModel.create_table(wait=True)
+    if not AuditionModel.exists():
+        AuditionModel.create_table(wait=True)
 
 if __name__ == "__main__":
     create_all_tables()
